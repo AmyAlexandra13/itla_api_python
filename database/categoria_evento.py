@@ -78,7 +78,6 @@ def obtener_categoria_evento_pg(
     return items
 
 
-#crea una funcion sql para editar categoria evento donde se pueda editar opcionalmente el nombre o el estado
 def actualizar_categoria_evento_pg(
         categoria_evento_id: int,
         nombre: str | None = None,
