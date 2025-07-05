@@ -6,8 +6,9 @@ from fastapi import APIRouter, status, Body, Depends, HTTPException, Path
 from database.categoria_evento import registrar_cateogoria_evento_pg, obtener_categoria_evento_pg, \
     actualizar_categoria_evento_pg
 from database.connection import get_connection
-from database.evento import registrar_evento_pg
+from database.evento import registrar_evento_pg, obtener_evento_pg
 from models.categoria_evento import CategoriaEvento
+from models.evento import Evento
 from models.generico import ResponseData, ResponseList
 from models.requests.actualizar_categoria_evento import ActualizarCategoriaEventoRequest
 from models.requests.registrar_categoria_evento import RegistrarCategoriaEventoRequest
@@ -22,7 +23,7 @@ router = APIRouter(prefix="/evento", tags=["Evento"])
 @router.post("/registrar",
              responses={status.HTTP_201_CREATED: {"model": ResponseData[int]}},
              summary='registrarEvento', status_code=status.HTTP_201_CREATED)
-def registrar_categoria_evento(request: RegistrarEventoRequest = Body(),
+def registrar_evento(request: RegistrarEventoRequest = Body(),
                                current_user: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
     conexion = get_connection()
 
@@ -79,26 +80,26 @@ def registrar_categoria_evento(request: RegistrarEventoRequest = Body(),
 
 
 @router.get("/",
-            responses={status.HTTP_200_OK: {"model": ResponseList[List[CategoriaEvento]]}},
-            summary='obtenerCategoriaEvento', status_code=status.HTTP_200_OK)
-def buscar_categoria_evento(_: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
+            responses={status.HTTP_200_OK: {"model": ResponseList[List[Evento]]}},
+            summary='obtenerEvento', status_code=status.HTTP_200_OK)
+def buscar_evento(_: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
     conexion = get_connection()
 
     try:
 
-        categorias_eventos = obtener_categoria_evento_pg(
+        eventos = obtener_evento_pg(
             conexion=conexion
         )
 
-        if not categorias_eventos:
+        if not eventos:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail='No se encontraron categorias de eventos'
+                detail='No se encontraron eventos'
             )
 
         conexion.commit()
 
-        return ResponseList(data=categorias_eventos)
+        return ResponseList(data=eventos)
 
     except HTTPException as e:
 
@@ -121,28 +122,28 @@ def buscar_categoria_evento(_: dict = Depends(get_current_user(Rol.ADMINISTRADOR
     finally:
         conexion.close()
 
-@router.get("/{categoriaEventoId}",
-             responses={status.HTTP_200_OK: {"model": ResponseData[CategoriaEvento]}},
-             summary='registrarCategoriaEvento', status_code=status.HTTP_200_OK)
-def buscar_categoria_evento_id(categoria_evento_id: int = Path(alias='categoriaEventoId', description='Id de la categoria del evento'),
-              _: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
+@router.get("/{eventoId}",
+             responses={status.HTTP_200_OK: {"model": ResponseData[Evento]}},
+             summary='obtenerEventoPorId', status_code=status.HTTP_200_OK)
+def buscar_evento_id(evento_id: int = Path(alias='eventoId', description='Id del evento'),
+                     _: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
 
     conexion = get_connection()
 
     try:
 
-        categorias_eventos = obtener_categoria_evento_pg(
-            categoria_evento_id=categoria_evento_id,
+        eventos = obtener_evento_pg(
+            evento_id=evento_id,
             conexion=conexion
         )
 
-        if not categorias_eventos:
+        if not eventos:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail='No se encontró la categoria del evento'
+                detail='No se encontró el evento'
             )
 
-        categoria_evento = categorias_eventos[0]
+        categoria_evento = eventos[0]
 
 
         conexion.commit()

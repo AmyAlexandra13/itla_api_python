@@ -105,7 +105,7 @@ def buscar_categoria_evento(_: dict = Depends(get_current_user(Rol.ADMINISTRADOR
 
 @router.get("/{categoriaEventoId}",
              responses={status.HTTP_200_OK: {"model": ResponseData[CategoriaEvento]}},
-             summary='registrarCategoriaEvento', status_code=status.HTTP_200_OK)
+             summary='obtenerCategoriaEventoPorId', status_code=status.HTTP_200_OK)
 def buscar_categoria_evento_id(categoria_evento_id: int = Path(alias='categoriaEventoId', description='Id de la categoria del evento'),
               _: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
 
