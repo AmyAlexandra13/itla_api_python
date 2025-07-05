@@ -6,20 +6,23 @@ from fastapi import APIRouter, status, Body, Depends, HTTPException, Path
 from database.categoria_evento import registrar_cateogoria_evento_pg, obtener_categoria_evento_pg, \
     actualizar_categoria_evento_pg
 from database.connection import get_connection
+from database.evento import registrar_evento_pg
 from models.categoria_evento import CategoriaEvento
 from models.generico import ResponseData, ResponseList
 from models.requests.actualizar_categoria_evento import ActualizarCategoriaEventoRequest
 from models.requests.registrar_categoria_evento import RegistrarCategoriaEventoRequest
+from models.requests.registrar_evento import RegistrarEventoRequest
 from shared.constante import Estado, Rol
 from shared.permission import get_current_user
+from shared.utils import validar_fechas
 
-router = APIRouter(prefix="/categoria-evento", tags=["Categoria evento"])
+router = APIRouter(prefix="/evento", tags=["Evento"])
 
 
 @router.post("/registrar",
              responses={status.HTTP_201_CREATED: {"model": ResponseData[int]}},
-             summary='registrarCategoriaEvento', status_code=status.HTTP_201_CREATED)
-def registrar_categoria_evento(request: RegistrarCategoriaEventoRequest = Body(),
+             summary='registrarEvento', status_code=status.HTTP_201_CREATED)
+def registrar_categoria_evento(request: RegistrarEventoRequest = Body(),
                                current_user: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
     conexion = get_connection()
 
@@ -27,16 +30,31 @@ def registrar_categoria_evento(request: RegistrarCategoriaEventoRequest = Body()
 
         usuario_id = current_user['usuarioId']
 
-        categoria_evento_id = registrar_cateogoria_evento_pg(
+        fechas_validas_dict = validar_fechas(request.fechaInicio, request.fechaFin)
+
+        if not fechas_validas_dict['valido']:
+
+            logging.exception("Las fechas inicio y fin del evento son invalidas")
+
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Las fechas inicio y fin del evento son invalidas'
+            )
+
+        evento_id = registrar_evento_pg(
             nombre=request.nombre,
             usuario_creacion_id=usuario_id,
             estado=Estado.ACTIVO,
+            categoria_evento_id=request.categoriaEventoId,
+            descripcion=request.descripcion,
+            fecha_inicio=request.fechaInicio,
+            fecha_fin=request.fechaFin,
             conexion=conexion
         )
 
         conexion.commit()
 
-        return ResponseData[int](data=categoria_evento_id)
+        return ResponseData[int](data=evento_id)
 
     except HTTPException as e:
 

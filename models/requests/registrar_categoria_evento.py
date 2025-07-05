@@ -1,4 +1,3 @@
-#haz un modelo registrar categoria evento request de la estructura categoria evento
 
 from pydantic import BaseModel, Field, field_validator
 

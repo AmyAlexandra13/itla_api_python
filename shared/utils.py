@@ -92,3 +92,23 @@ def create_access_token(data: dict):
     to_encode.update({"exp": expire})
 
     return jwt.encode(to_encode, secret_key, algorithm=algorithm)
+
+
+from datetime import datetime
+
+
+def validar_fechas(fecha_inicio: datetime, fecha_fin: datetime) -> dict:
+    errores = []
+    ahora = datetime.now()
+
+    if fecha_inicio < ahora:
+        errores.append("La fecha de inicio debe ser mayor o igual a la fecha actual.")
+
+    if fecha_fin <= fecha_inicio:
+        errores.append("La fecha de fin debe ser mayor que la fecha de inicio.")
+
+    return {
+        "valido": len(errores) == 0,
+        "errores": errores
+    }
+

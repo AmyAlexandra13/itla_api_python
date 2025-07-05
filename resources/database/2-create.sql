@@ -56,11 +56,25 @@ create table if not exists categoria_evento (
 create table if not exists evento(
     evento_id bigserial primary key,
     nombre varchar(250) not null,
-    descripcion varchar(250) not null,
+    descripcion varchar(250) null,
+    usuario_creacion_id bigint not null,
     categoria_evento_id bigint not null,
     estado varchar(2) not null,
+    fecha_inicio timestamp not null,
+    fecha_fin timestamp not null,
     fecha_creacion timestamp not null default (now() at time zone 'EDT'),
     fecha_actualizacion timestamp null,
+    usuario_actualizacion_id bigint null,
+
+    constraint evento_usuario_creacion_id_fk
+        foreign key(usuario_creacion_id)
+        references usuario(usuario_id)
+        on delete restrict,
+
+    constraint evento_usuario_actualizacion_id_fk
+        foreign key(usuario_actualizacion_id)
+        references usuario(usuario_id)
+        on delete restrict,
 
     constraint evento_estado_ck
         check(estado in ('AC', 'IN')),
