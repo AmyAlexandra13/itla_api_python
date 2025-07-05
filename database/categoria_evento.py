@@ -49,6 +49,7 @@ def query_seleccionar_datos_categoria_evento():
 
 def obtener_categoria_evento_pg(
         categoria_evento_id: int | None = None,
+        estado: str | None = None,
         conexion: psycopg2.extensions.connection | None = None
 ):
     sql = query_seleccionar_datos_categoria_evento()
@@ -60,6 +61,11 @@ def obtener_categoria_evento_pg(
     if categoria_evento_id is not None:
         where_exprss.append("ce.categoria_evento_id = %s")
         values.append(categoria_evento_id)
+
+
+    if estado is not None:
+        where_exprss.append("ce.estado = %s")
+        values.append(estado)
 
 
     if where_exprss:

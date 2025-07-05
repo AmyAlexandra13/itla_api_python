@@ -1,17 +1,14 @@
 import logging
 from typing import List
 
-from fastapi import APIRouter, status, Body, Depends, HTTPException, Path
+from fastapi import APIRouter, status, Body, Depends, HTTPException, Path, Query
 
-from database.categoria_evento import registrar_cateogoria_evento_pg, obtener_categoria_evento_pg, \
-    actualizar_categoria_evento_pg
+from database.categoria_evento import obtener_categoria_evento_pg
 from database.connection import get_connection
-from database.evento import registrar_evento_pg, obtener_evento_pg
-from models.categoria_evento import CategoriaEvento
+from database.evento import registrar_evento_pg, obtener_evento_pg, actualizar_evento_pg
 from models.evento import Evento
 from models.generico import ResponseData, ResponseList
-from models.requests.actualizar_categoria_evento import ActualizarCategoriaEventoRequest
-from models.requests.registrar_categoria_evento import RegistrarCategoriaEventoRequest
+from models.requests.actualizar_evento import ActualizarEventoRequest
 from models.requests.registrar_evento import RegistrarEventoRequest
 from shared.constante import Estado, Rol
 from shared.permission import get_current_user
@@ -24,7 +21,7 @@ router = APIRouter(prefix="/evento", tags=["Evento"])
              responses={status.HTTP_201_CREATED: {"model": ResponseData[int]}},
              summary='registrarEvento', status_code=status.HTTP_201_CREATED)
 def registrar_evento(request: RegistrarEventoRequest = Body(),
-                               current_user: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
+                     current_user: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
     conexion = get_connection()
 
     try:
@@ -34,7 +31,6 @@ def registrar_evento(request: RegistrarEventoRequest = Body(),
         fechas_validas_dict = validar_fechas(request.fechaInicio, request.fechaFin)
 
         if not fechas_validas_dict['valido']:
-
             logging.exception("Las fechas inicio y fin del evento son invalidas")
 
             raise HTTPException(
@@ -122,18 +118,20 @@ def buscar_evento(_: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
     finally:
         conexion.close()
 
-@router.get("/{eventoId}",
-             responses={status.HTTP_200_OK: {"model": ResponseData[Evento]}},
-             summary='obtenerEventoPorId', status_code=status.HTTP_200_OK)
-def buscar_evento_id(evento_id: int = Path(alias='eventoId', description='Id del evento'),
-                     _: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
 
+@router.get("/{eventoId}",
+            responses={status.HTTP_200_OK: {"model": ResponseData[Evento]}},
+            summary='obtenerEventoPorId', status_code=status.HTTP_200_OK)
+def buscar_evento_id(evento_id: int = Path(alias='eventoId', description='Id del evento'),
+                     _: dict = Depends(get_current_user(Rol.ADMINISTRADOR)),
+                     estado: str | None = Query(None, min_length=2, max_length=2, pattern="^(IN|AC)$")):
     conexion = get_connection()
 
     try:
 
         eventos = obtener_evento_pg(
             evento_id=evento_id,
+            estado=estado,
             conexion=conexion
         )
 
@@ -145,9 +143,7 @@ def buscar_evento_id(evento_id: int = Path(alias='eventoId', description='Id del
 
         categoria_evento = eventos[0]
 
-
         conexion.commit()
-
 
         return ResponseData(data=categoria_evento)
 
@@ -174,30 +170,65 @@ def buscar_evento_id(evento_id: int = Path(alias='eventoId', description='Id del
 
 
 @router.patch("/actualizar",
-             summary='actualizarCategoriaEvento', status_code=status.HTTP_204_NO_CONTENT)
-def actualizar_categoria_evento(request: ActualizarCategoriaEventoRequest = Body(),
-              _: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
-
+              summary='actualizarEvento', status_code=status.HTTP_204_NO_CONTENT)
+def actualizar_evento(request: ActualizarEventoRequest = Body(),
+                      current_user: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
     conexion = get_connection()
 
     try:
 
         categoria_evento_id = request.categoriaEventoId
 
+        usuario_id = current_user['usuarioId']
+
+        evento_id = request.eventoId
+
+        eventos = obtener_evento_pg(
+            evento_id=evento_id,
+            conexion=conexion
+        )
+
+        if not eventos:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='No se encontró el evento para actualizar'
+            )
+
+        evento = eventos[0]
+
         categorias_eventos = obtener_categoria_evento_pg(
             categoria_evento_id=categoria_evento_id,
+            estado=Estado.ACTIVO,
             conexion=conexion
         )
 
         if not categorias_eventos:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail='No se encontró la categoria del evento para actualizar'
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='No se encontró la categoria del evento activo para actualizar'
             )
 
+        fecha_inicio_validar = request.fechaInicio if request.fechaInicio else evento.fechaInicio
+
+        fecha_fin_validar = request.fechaFin if request.fechaFin else evento.fechaFin
+
+        fechas_validas_dict = validar_fechas(fecha_inicio_validar, fecha_fin_validar)
+
+        if not fechas_validas_dict['valido']:
+            logging.exception("Las fechas inicio y fin del evento son invalidas")
+
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Las fechas inicio y fin del evento son invalidas'
+            )
 
         params = {
             'nombre': request.nombre,
+            'descripcion': request.descripcion,
+            'fecha_inicio': request.fechaInicio,
+            'fecha_fin': request.fechaFin,
+            'categoria_evento_id': categoria_evento_id,
+            'usuario_actualizacion_id': usuario_id,
             'estado': request.estado
         }
 
@@ -209,11 +240,11 @@ def actualizar_categoria_evento(request: ActualizarCategoriaEventoRequest = Body
 
         params['conexion'] = conexion
 
-        params['categoria_evento_id'] = categoria_evento_id
+        params['evento_id'] = evento_id
 
-        categoria_evento_actualizado = actualizar_categoria_evento_pg(**params)
+        evento_actualizado = actualizar_evento_pg(**params)
 
-        if not categoria_evento_actualizado:
+        if not evento_actualizado:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='No se pudo actualizar la categoria del evento'
@@ -243,4 +274,3 @@ def actualizar_categoria_evento(request: ActualizarCategoriaEventoRequest = Body
 
     finally:
         conexion.close()
-

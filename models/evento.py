@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 
 class UsuarioEvento(BaseModel):
@@ -13,10 +15,10 @@ class Evento(BaseModel):
     nombre: str
     descripcion: str | None = None
     estado: str
-    fechaCreacion: str
+    fechaCreacion: datetime
     usuario: UsuarioEvento
     categoriaEvento: CategoriaEventoEvento
-    fechaInicio: str
-    fechaFin: str
-    fechaActualizacion: str | None = None
+    fechaInicio: datetime
+    fechaFin: datetime
+    fechaActualizacion: datetime | None = None
     usuarioActualizacionId: int | None = None

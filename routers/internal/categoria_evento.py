@@ -1,7 +1,7 @@
 import logging
 from typing import List
 
-from fastapi import APIRouter, status, Body, Depends, HTTPException, Path
+from fastapi import APIRouter, status, Body, Depends, HTTPException, Path, Query
 
 from database.categoria_evento import registrar_cateogoria_evento_pg, obtener_categoria_evento_pg, \
     actualizar_categoria_evento_pg
@@ -63,12 +63,15 @@ def registrar_categoria_evento(request: RegistrarCategoriaEventoRequest = Body()
 @router.get("/",
             responses={status.HTTP_200_OK: {"model": ResponseList[List[CategoriaEvento]]}},
             summary='obtenerCategoriaEvento', status_code=status.HTTP_200_OK)
-def buscar_categoria_evento(_: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
+def buscar_categoria_evento(_: dict = Depends(get_current_user(Rol.ADMINISTRADOR)),
+                            estado: str | None = Query(None, min_length=2, max_length=2)
+                            ):
     conexion = get_connection()
 
     try:
 
         categorias_eventos = obtener_categoria_evento_pg(
+            estado=estado,
             conexion=conexion
         )
 

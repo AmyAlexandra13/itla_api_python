@@ -2,6 +2,7 @@ class Estado:
     ACTIVO = 'AC'
     INACTIVO = 'IN'
 
+
 class Rol:
     ADMINISTRADOR = 1
     USUARIO = 2
