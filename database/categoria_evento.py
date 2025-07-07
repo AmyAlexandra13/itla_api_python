@@ -4,6 +4,7 @@ from models.categoria_evento import CategoriaEvento
 from shared.utils import formartear_secuencia_insertar_sql, execute_query
 
 
+
 def registrar_cateogoria_evento_pg(
         nombre: str,
         usuario_creacion_id: int,
@@ -115,3 +116,26 @@ def actualizar_categoria_evento_pg(
         return None
 
     return categoria_evento_actualizado[0]['categoriaEventoId']
+
+def eliminar_evento_pg(
+        evento_id: int,
+        usuario_actualizacion_id: int,
+        conexion: psycopg2.extensions.connection | None = None
+) -> int | None:
+    sql = """
+        UPDATE evento
+        SET estado = %s,
+            fecha_actualizacion = (now() at time zone 'EDT'),
+            usuario_actualizacion_id = %s
+        WHERE evento_id = %s
+        RETURNING evento_id;
+    """
+    # Usamos Estado.INACTIVO para el soft delete
+    values = ['IN', usuario_actualizacion_id, evento_id]
+
+    resultado = execute_query(sql, values, conn=conexion)
+
+    if not resultado:
+        return None
+
+    return resultado[0]['eventoId']
