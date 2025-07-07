@@ -108,3 +108,39 @@ create table if not exists usuario_rol(
     constraint usuario_rol_estado_ck
         check(estado in ('AC', 'IN'))
 );
+
+
+create table if not exists editorial(
+    editorial_id bigserial primary key,
+    nombre varchar(250) not null,
+    estado varchar(2) not null,
+    fecha_creacion timestamp not null default (now() at time zone 'EDT'),
+    fecha_actualizacion timestamp null,
+
+
+    constraint editorial_estado_ck
+        check(estado in ('AC', 'IN'))
+);
+
+
+create table if not exists libro(
+    libro_id bigserial primary key,
+    editorial_id bigint not null,
+    titulo varchar(250) not null,
+    sipnosis varchar(250) null,
+    year_publicacion smallint null,
+    archivo_url varchar(250) null,
+    imagen_url varchar(250) null,
+    estado varchar(2) not null,
+    fecha_creacion timestamp not null default (now() at time zone 'EDT'),
+    fecha_actualizacion timestamp null,
+
+
+    constraint libro_editorial_id_fk
+        foreign key(editorial_id)
+        references editorial(editorial_id)
+        on delete restrict,
+
+    constraint libro_estado_ck
+        check(estado in ('AC', 'IN'))
+);
