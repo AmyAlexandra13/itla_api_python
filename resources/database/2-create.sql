@@ -144,3 +144,41 @@ create table if not exists libro(
     constraint libro_estado_ck
         check(estado in ('AC', 'IN'))
 );
+-- Tabla principal
+CREATE TABLE IF NOT EXISTS editoriales (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    correo VARCHAR(100),
+    telefono VARCHAR(20),
+    direccion TEXT,
+    estado BOOLEAN DEFAULT TRUE,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla de autores
+CREATE TABLE IF NOT EXISTS autores (
+    id SERIAL PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    correo VARCHAR(100),
+    biografia TEXT,
+    estado BOOLEAN DEFAULT TRUE,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla de libros
+CREATE TABLE IF NOT EXISTS libros (
+    id SERIAL PRIMARY KEY,
+    titulo VARCHAR(200) NOT NULL,
+    isbn VARCHAR(20) UNIQUE NOT NULL,
+    anio_publicacion INT,
+    editorial_id INT REFERENCES editoriales(id) ON DELETE CASCADE,
+    estado BOOLEAN DEFAULT TRUE,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla puente: muchos libros pueden tener muchos autores
+CREATE TABLE IF NOT EXISTS libro_autor (
+    id SERIAL PRIMARY KEY,
+    libro_id INT REFERENCES libros(id) ON DELETE CASCADE,
+    autor_id INT REFERENCES autores(id) ON DELETE CASCADE
+);
