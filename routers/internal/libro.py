@@ -1,10 +1,12 @@
 import logging
+from typing import List
 
-from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, File, Form, Query
 
 from database.connection import get_connection
-from database.libro import registrar_libro_pg
-from models.generico import ResponseData
+from database.libro import registrar_libro_pg, obtener_libros_pg
+from models.generico import ResponseData, ResponseList
+from models.libro import Libro
 from shared.constante import Estado, Rol, SizeLibro
 from shared.permission import get_current_user
 
@@ -71,6 +73,50 @@ async def registrar_libro(
 
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
 
+
+    finally:
+        conexion.close()
+
+
+@router.get(
+    "/",
+    responses={status.HTTP_200_OK: {"model": ResponseList[List[Libro]]}},
+    summary="obtenerLibros",
+    status_code=status.HTTP_200_OK
+)
+def buscar_libros(
+    _: dict = Depends(get_current_user(Rol.ADMINISTRADOR)),
+    estado: str | None = Query(None, min_length=2, max_length=2)
+):
+    conexion = get_connection()
+
+    try:
+        libros = obtener_libros_pg(
+            estado=estado,
+            conexion=conexion
+        )
+
+        if not libros:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No se encontraron libros"
+            )
+
+        conexion.commit()
+        return ResponseList(data=libros)
+
+    except HTTPException as e:
+        logging.exception("Error controlado al obtener libros")
+        conexion.rollback()
+        raise
+
+    except Exception as e:
+        logging.exception("Ocurrió un error inesperado al obtener libros")
+        conexion.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno del servidor"
+        )
 
     finally:
         conexion.close()
