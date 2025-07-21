@@ -7,3 +7,6 @@ class Rol:
     ADMINISTRADOR = 1
     USUARIO = 2
     CLIENTE = 3
+
+class SizeLibro:
+    MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB

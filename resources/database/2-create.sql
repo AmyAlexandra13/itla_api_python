@@ -127,13 +127,26 @@ create table if not exists libro(
     libro_id bigserial primary key,
     editorial_id bigint not null,
     titulo varchar(250) not null,
+    usuario_creacion_id bigint not null,
     sipnosis varchar(250) null,
     year_publicacion smallint null,
     archivo_url varchar(250) null,
     imagen_url varchar(250) null,
+    content bytea NOT NULL,
     estado varchar(2) not null,
     fecha_creacion timestamp not null default (now() at time zone 'EDT'),
     fecha_actualizacion timestamp null,
+    usuario_actualizacion_id bigint null,
+
+    constraint libro_usuario_creacion_id_fk
+        foreign key(usuario_creacion_id)
+        references usuario(usuario_id)
+        on delete restrict,
+
+    constraint libro_usuario_actualizacion_id_fk
+        foreign key(usuario_actualizacion_id)
+        references usuario(usuario_id)
+        on delete restrict,
 
 
     constraint libro_editorial_id_fk
