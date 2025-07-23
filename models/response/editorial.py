@@ -3,14 +3,8 @@ from typing import Optional
 from datetime import datetime
 
 class EditorialResponse(BaseModel):
-    id: int
+    editorial_id: int
     nombre: str
-    correo: Optional[EmailStr] = None
-    telefono: Optional[str] = None
-    direccion: Optional[str] = None
-    estado: Optional[bool] = True
+    estado: str
     fecha_creacion: datetime
-
-    model_config = {
-        "from_attributes": True
-    }
+    fecha_actualizacion: datetime | None = None

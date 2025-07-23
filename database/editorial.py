@@ -4,109 +4,134 @@ from models.requests.actualizar_editorial import ActualizarEditorialRequest
 from models.response.editorial import EditorialResponse
 from fastapi import HTTPException
 
-def crear_editorial(data: RegistrarEditorialRequest) -> int:
-    conn = get_connection()
+def registrar_editorial_pg(
+        nombre: str,
+        estado: str,
+        conexion=None
+):
+    sql = """
+        INSERT INTO editorial (nombre, estado)
+        VALUES (%s, %s)
+        RETURNING editorial_id
+    """
+    conn = conexion or get_connection()
     cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO editoriales (nombre, correo, telefono, direccion, estado)
-        VALUES (%s, %s, %s, %s, %s)
-        RETURNING id
-    """, (data.nombre, data.correo, data.telefono, data.direccion, data.estado))
+    cur.execute(sql, [nombre, estado])
     editorial_id = cur.fetchone()[0]
     conn.commit()
     cur.close()
-    conn.close()
+    if conexion is None:
+        conn.close()
     return editorial_id
 
-def listar_editoriales() -> list[EditorialResponse]:
-    conn = get_connection()
+def query_seleccionar_datos_editorial():
+    return '''
+        SELECT editorial_id,
+               nombre,
+               estado,
+               fecha_creacion,
+               fecha_actualizacion
+        FROM editorial
+    '''
+
+def obtener_editorial_pg(
+        editorial_id: int = None,
+        estado: str = None,
+        conexion=None
+):
+    sql = query_seleccionar_datos_editorial()
+    where_exprss = []
+    values = []
+
+    if editorial_id is not None:
+        where_exprss.append("editorial_id = %s")
+        values.append(editorial_id)
+    if estado is not None:
+        where_exprss.append("estado = %s")
+        values.append(estado)
+
+    if where_exprss:
+        sql += " WHERE " + " AND ".join(where_exprss)
+
+    sql += " ORDER BY editorial_id DESC;"
+
+    conn = conexion or get_connection()
     cur = conn.cursor()
-    cur.execute("""
-        SELECT id, nombre, correo, telefono, direccion, estado, fecha_creacion
-        FROM editoriales
-        ORDER BY id DESC
-    """)
+    cur.execute(sql, values)
     rows = cur.fetchall()
     cur.close()
-    conn.close()
+    if conexion is None:
+        conn.close()
+    items = [EditorialResponse(
+        editorial_id=row[0],
+        nombre=row[1],
+        estado=row[2],
+        fecha_creacion=row[3],
+        fecha_actualizacion=row[4]
+    ) for row in rows]
+    return items
 
-    return [
-        EditorialResponse(
-            id=row[0],
-            nombre=row[1],
-            correo=row[2],
-            telefono=row[3],
-            direccion=row[4],
-            estado=row[5],
-            fecha_creacion=row[6]
-        )
-        for row in rows
-    ]
+def actualizar_editorial_pg(
+        editorial_id: int,
+        nombre: str = None,
+        estado: str = None,
+        conexion=None
+):
+    fields = []
+    values = []
 
-def obtener_editorial(editorial_id: int) -> EditorialResponse:
-    conn = get_connection()
+    if nombre is not None:
+        fields.append("nombre = %s")
+        values.append(nombre)
+    if estado is not None:
+        fields.append("estado = %s")
+        values.append(estado)
+
+    # actualiza fecha_actualizacion cada vez que se edita
+    fields.append("fecha_actualizacion = (now() at time zone 'EDT')")
+
+    if not fields:
+        raise HTTPException(status_code=400, detail="No hay campos para actualizar")
+
+    values.append(editorial_id)
+
+    sql = f"""
+        UPDATE editorial
+        SET {', '.join(fields)}
+        WHERE editorial_id = %s
+        RETURNING editorial_id, nombre, estado, fecha_creacion, fecha_actualizacion;
+    """
+
+    conn = conexion or get_connection()
     cur = conn.cursor()
-    cur.execute("""
-        SELECT id, nombre, correo, telefono, direccion, estado, fecha_creacion
-        FROM editoriales
-        WHERE id = %s
-    """, (editorial_id,))
+    cur.execute(sql, values)
     row = cur.fetchone()
+    conn.commit()
     cur.close()
-    conn.close()
+    if conexion is None:
+        conn.close()
 
     if row is None:
         raise HTTPException(status_code=404, detail="Editorial no encontrada")
-
     return EditorialResponse(
-        id=row[0],
+        editorial_id=row[0],
         nombre=row[1],
-        correo=row[2],
-        telefono=row[3],
-        direccion=row[4],
-        estado=row[5],
-        fecha_creacion=row[6]
+        estado=row[2],
+        fecha_creacion=row[3],
+        fecha_actualizacion=row[4]
     )
 
-def actualizar_editorial(editorial_id: int, data: ActualizarEditorialRequest) -> EditorialResponse:
-    conn = get_connection()
+def eliminar_editorial_pg(
+        editorial_id: int,
+        conexion=None
+):
+    sql = "DELETE FROM editorial WHERE editorial_id = %s;"
+    conn = conexion or get_connection()
     cur = conn.cursor()
-    cur.execute("""
-        UPDATE editoriales
-        SET nombre = %s,
-            correo = %s,
-            telefono = %s,
-            direccion = %s,
-            estado = %s
-        WHERE id = %s
-        RETURNING id, nombre, correo, telefono, direccion, estado, fecha_creacion
-    """, (data.nombre, data.correo, data.telefono, data.direccion, data.estado, editorial_id))
-    row = cur.fetchone()
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    if row is None:
-        raise HTTPException(status_code=404, detail="No se pudo actualizar la editorial")
-
-    return EditorialResponse(
-        id=row[0],
-        nombre=row[1],
-        correo=row[2],
-        telefono=row[3],
-        direccion=row[4],
-        estado=row[5],
-        fecha_creacion=row[6]
-    )
-
-def eliminar_editorial(editorial_id: int) -> int:
-    conn = get_connection()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM editoriales WHERE id = %s", (editorial_id,))
+    cur.execute(sql, [editorial_id])
     deleted = cur.rowcount
     conn.commit()
     cur.close()
-    conn.close()
+    if conexion is None:
+        conn.close()
     return deleted
-
-print("✅ Cargando archivo editorial.py")
