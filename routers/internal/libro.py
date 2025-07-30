@@ -1,10 +1,12 @@
 import logging
+from io import BytesIO
 from typing import List
 
-from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, File, Form, Query
+from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, File, Form, Query, Path
+from starlette.responses import StreamingResponse
 
 from database.connection import get_connection
-from database.libro import registrar_libro_pg, obtener_libros_pg
+from database.libro import registrar_libro_pg, obtener_libros_pg, obtener_content_libro
 from models.generico import ResponseData, ResponseList
 from models.libro import Libro
 from shared.constante import Estado, Rol, SizeLibro
@@ -85,8 +87,8 @@ async def registrar_libro(
     status_code=status.HTTP_200_OK
 )
 def buscar_libros(
-    _: dict = Depends(get_current_user(Rol.ADMINISTRADOR)),
-    estado: str | None = Query(None, min_length=2, max_length=2)
+        _: dict = Depends(get_current_user(Rol.ADMINISTRADOR)),
+        estado: str | None = Query(None, min_length=2, max_length=2)
 ):
     conexion = get_connection()
 
@@ -107,16 +109,67 @@ def buscar_libros(
 
     except HTTPException as e:
         logging.exception("Error controlado al obtener libros")
+
         conexion.rollback()
-        raise
+
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
 
     except Exception as e:
         logging.exception("Ocurrió un error inesperado al obtener libros")
         conexion.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error interno del servidor"
+
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
+
+
+    finally:
+        conexion.close()
+
+
+@router.get("/{libroId}/descargar",
+            summary="Descargar contenido del libro por ID",
+            status_code=status.HTTP_200_OK)
+def descargar_libro(
+        libroId: int = Path(..., description="ID del libro"),
+        _: dict = Depends(get_current_user(Rol.ADMINISTRADOR))
+) -> StreamingResponse:
+    conexion = get_connection()
+
+    try:
+        libros = obtener_libros_pg(libro_id=libroId, conexion=conexion)
+
+        if not libros:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Libro no encontrado"
+            )
+
+        libro = libros[0]
+        titulo = libro.titulo
+        content = obtener_content_libro(libro_id=libroId)
+
+        if content is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Contenido del libro no disponible"
+            )
+
+        file_like = BytesIO(content)
+        filename = f"{titulo.replace(' ', '_')}.pdf"
+
+        return StreamingResponse(
+            file_like,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
+
+    except HTTPException as e:
+        logging.exception("Error esperado al descargar libro")
+        raise e
+
+    except Exception as e:
+        logging.exception("Error inesperado al descargar libro")
+
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
 
     finally:
         conexion.close()

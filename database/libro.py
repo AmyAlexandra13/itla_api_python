@@ -140,3 +140,23 @@ def obtener_libros_pg(
     items = [Libro(**item) for item in results]
 
     return items
+
+
+def obtener_content_libro(
+        libro_id: int,
+        conexion: psycopg2.extensions.connection | None = None
+):
+    sql = '''
+        SELECT content
+        FROM libro
+        WHERE libro_id = %s;
+    '''
+
+    values = [libro_id]
+
+    results = execute_query(sql, values, conn=conexion)
+
+    if not results:
+        return None
+
+    return results[0]['content']
