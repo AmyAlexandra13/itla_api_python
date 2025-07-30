@@ -128,6 +128,7 @@ create table if not exists libro(
     editorial_id bigint not null,
     titulo varchar(250) not null,
     usuario_creacion_id bigint not null,
+    cantidad_disponible bigint not null,
     sipnosis varchar(250) null,
     year_publicacion smallint null,
     archivo_url varchar(250) null,

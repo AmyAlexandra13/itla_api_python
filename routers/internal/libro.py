@@ -112,7 +112,7 @@ def buscar_libros(
 
         conexion.rollback()
 
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
+        raise HTTPException(status_code=e.status_code, detail=e)
 
     except Exception as e:
         logging.exception("Ocurrió un error inesperado al obtener libros")
