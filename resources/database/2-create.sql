@@ -158,3 +158,52 @@ create table if not exists libro(
     constraint libro_estado_ck
         check(estado in ('AC', 'IN'))
 );
+
+
+create table if not exists programa_academico(
+    programa_academico_id bigserial primary key,
+    nombre varchar(250) not null,
+    estado varchar(2) not null,
+    periodo_academico varchar(9) not null,
+    fecha_creacion timestamp not null default (now() at time zone 'EDT'),
+    fecha_actualizacion timestamp null,
+
+    constraint programa_academico_estado_ck
+        check(estado in ('AC', 'IN'))
+);
+
+create table if not exists materia(
+    materia_id bigserial primary key,
+    nombre varchar(250) not null,
+    codigo varchar(20) not null,
+    estado varchar(2) not null,
+    credito bigint not null,
+    fecha_creacion timestamp not null default (now() at time zone 'EDT'),
+    fecha_actualizacion timestamp null,
+
+    constraint materia_estado_ck
+        check(estado in ('AC', 'IN'))
+);
+
+create table if not exists programa_academico_materia(
+    programa_academico_materia_id bigserial primary key,
+    programa_academico_id bigint not null,
+    materia_id bigint not null,
+    estado varchar(2) not null,
+    fecha_creacion timestamp not null default (now() at time zone 'EDT'),
+    fecha_actualizacion timestamp null,
+
+    constraint programa_academico_materia_estado_ck
+        check(estado in ('AC', 'IN')),
+
+    constraint programa_academico_materia_programa_academico_id_fk
+        foreign key(programa_academico_id)
+
+        references programa_academico(programa_academico_id)
+        on delete restrict,
+
+    constraint programa_academico_materia_materia_id_fk
+        foreign key(materia_id)
+        references materia(materia_id)
+        on delete restrict
+);

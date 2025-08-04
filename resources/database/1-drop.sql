@@ -5,3 +5,5 @@ drop table if exists rol;
 drop table if exists usuario_rol
 drop table if exists editorial;
 drop table if exists libro;
+drop table if exists estudiante;
+drop table if exists programa_academico;
