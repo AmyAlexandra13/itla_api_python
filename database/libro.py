@@ -160,3 +160,78 @@ def obtener_content_libro(
         return None
 
     return results[0]['content']
+
+
+def actualizar_libro_pg(
+        libro_id: int,
+        usuario_actualizacion_id: int,
+        editorial_id: int | None = None,
+        titulo: str | None = None,
+        estado: str | None = None,
+        cantidad_disponible: int | None = None,
+        sipnosis: str | None = None,
+        year_publicacion: int | None = None,
+        archivo_url: str | None = None,
+        imagen_url: str | None = None,
+        conexion: psycopg2.extensions.connection | None = None
+):
+    fields = []
+    values = []
+
+    # Siempre actualizar el usuario que modificó
+    fields.append("usuario_actualizacion_id = %s")
+    values.append(usuario_actualizacion_id)
+
+    if editorial_id is not None:
+        fields.append("editorial_id = %s")
+        values.append(editorial_id)
+
+    if titulo is not None:
+        fields.append("titulo = %s")
+        values.append(titulo)
+
+    if estado is not None:
+        fields.append("estado = %s")
+        values.append(estado)
+
+    if cantidad_disponible is not None:
+        fields.append("cantidad_disponible = %s")
+        values.append(cantidad_disponible)
+
+    if sipnosis is not None:
+        fields.append("sipnosis = %s")
+        values.append(sipnosis)
+
+    if year_publicacion is not None:
+        fields.append("year_publicacion = %s")
+        values.append(year_publicacion)
+
+    if archivo_url is not None:
+        fields.append("archivo_url = %s")
+        values.append(archivo_url)
+
+    if imagen_url is not None:
+        fields.append("imagen_url = %s")
+        values.append(imagen_url)
+
+    values.append(libro_id)
+
+    sql = """
+          update libro
+          set fecha_actualizacion = (now() at time zone 'EDT'),
+          """
+
+    sql += ", ".join(fields)
+
+    sql += " where libro_id = %s"
+
+    sql += " returning libro_id"
+
+    sql += " ;"
+
+    libro_actualizado = execute_query(sql, values, conn=conexion)
+
+    if not libro_actualizado:
+        return None
+
+    return libro_actualizado[0]['libroId']

@@ -2,13 +2,14 @@ import logging
 from io import BytesIO
 from typing import List
 
-from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, File, Form, Query, Path
+from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, File, Form, Query, Path, Body
 from starlette.responses import StreamingResponse
 
 from database.connection import get_connection
-from database.libro import registrar_libro_pg, obtener_libros_pg, obtener_content_libro
+from database.libro import registrar_libro_pg, obtener_libros_pg, obtener_content_libro, actualizar_libro_pg
 from models.generico import ResponseData, ResponseList
 from models.libro import Libro
+from models.requests.actualizar_libro import ActualizarLibroRequest
 from shared.constante import Estado, Rol, SizeLibro
 from shared.permission import get_current_user
 
@@ -170,6 +171,101 @@ def descargar_libro(
         logging.exception("Error inesperado al descargar libro")
 
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
+
+    finally:
+        conexion.close()
+
+
+@router.patch("/actualizar",
+              summary='actualizarLibro', status_code=status.HTTP_204_NO_CONTENT)
+def actualizar_libro(
+        request: ActualizarLibroRequest = Body(),
+        current_user: dict = Depends(get_current_user(Rol.ADMINISTRADOR))
+):
+    conexion = get_connection()
+
+    try:
+        libro_id = request.libroId
+        usuario_id = current_user['usuarioId']
+
+        # Verificar que el libro existe
+        libros = obtener_libros_pg(
+            libro_id=libro_id,
+            conexion=conexion
+        )
+
+        if not libros:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='No se encontró el libro para actualizar'
+            )
+
+        # Validar que al menos un campo se va a actualizar (excluyendo libroId)
+        campos_actualizacion = [
+            request.editorialId,
+            request.titulo,
+            request.estado,
+            request.cantidadDisponible,
+            request.sipnosis,
+            request.yearPublicacion,
+            request.archivoUrl,
+            request.imagenUrl
+        ]
+
+        if all(campo is None for campo in campos_actualizacion):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Debe enviar al menos un campo para actualizar el libro'
+            )
+
+        # Si se proporciona editorialId, verificar que la editorial existe y está activa
+        if request.editorialId is not None:
+            from database.editorial import obtener_editorial_pg
+            editoriales = obtener_editorial_pg(
+                editorial_id=request.editorialId,
+                estado=Estado.ACTIVO,
+                conexion=conexion
+            )
+
+            if not editoriales:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail='No se encontró la editorial activa especificada'
+                )
+
+        libro_actualizado = actualizar_libro_pg(
+            libro_id=libro_id,
+            usuario_actualizacion_id=usuario_id,
+            editorial_id=request.editorialId,
+            titulo=request.titulo,
+            estado=request.estado,
+            cantidad_disponible=request.cantidadDisponible,
+            sipnosis=request.sipnosis,
+            year_publicacion=request.yearPublicacion,
+            archivo_url=request.archivoUrl,
+            imagen_url=request.imagenUrl,
+            conexion=conexion
+        )
+
+        if not libro_actualizado:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='No se pudo actualizar el libro'
+            )
+
+        conexion.commit()
+
+        return
+
+    except HTTPException as e:
+        logging.exception("Error controlado al actualizar libro")
+        conexion.rollback()
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+    except Exception as e:
+        logging.exception("Ocurrió un error inesperado al actualizar libro")
+        conexion.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
     finally:
         conexion.close()
