@@ -11,12 +11,12 @@ def registrar_libro_pg(
         titulo: str,
         estado: str,
         content: bytes,
+        imagen_url: str,
         usuario_creacion_id: int,
         cantidad_disponible: int,
         sipnosis: str | None = None,
         year_publicacion: int | None = None,
         archivo_url: str | None = None,
-        imagen_url: str | None = None,
         fecha_actualizacion: datetime | None = None,
         conexion: psycopg2.extensions.connection | None = None
 ):

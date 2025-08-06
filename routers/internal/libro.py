@@ -23,11 +23,11 @@ async def registrar_libro(
         editorialId: int = Form(...),
         titulo: str = Form(...),
         file: UploadFile = File(...),
+        imagenUrl: str = Form(None),
         cantidadDisponible: int = Form(..., ge=1),
         sipnosis: str = Form(None),
         yearPublicacion: int = Form(None),
         archivoUrl: str = Form(None),
-        imagenUrl: str = Form(None),
         current_user: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
     conexion = get_connection()
 
