@@ -21,6 +21,7 @@ class Libro(BaseModel):
     archivoUrl: Optional[str] = None
     imagenUrl: Optional[str] = None
     estado: str
+    cantidadDisponible: int
     fechaCreacion: str  # formato ya viene como string (DD-MM-YYYY HH24:MI:SS)
     fechaActualizacion: Optional[str] = None
     usuarioCreacion: UsuarioOut

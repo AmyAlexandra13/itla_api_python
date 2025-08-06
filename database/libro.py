@@ -79,6 +79,7 @@ def query_seleccionar_datos_libro():
                   l.archivo_url,
                   l.imagen_url,
                   l.estado,
+                  l.cantidad_disponible,
                   to_char(l.fecha_creacion, 'DD-MM-YYYY HH24:MI:SS')      AS fecha_creacion,
                   to_char(l.fecha_actualizacion, 'DD-MM-YYYY HH24:MI:SS') AS fecha_actualizacion,
 
