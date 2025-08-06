@@ -132,7 +132,7 @@ create table if not exists libro(
     sipnosis varchar(250) null,
     year_publicacion smallint null,
     archivo_url varchar(250) null,
-    imagen_url varchar(250) null,
+    imagen_url varchar null,
     content bytea NOT NULL,
     estado varchar(2) not null,
     fecha_creacion timestamp not null default (now() at time zone 'EDT'),
