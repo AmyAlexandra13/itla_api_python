@@ -48,85 +48,55 @@ INSERT INTO materia (nombre, codigo, estado, credito) VALUES
 ('Ética Profesional', 'ETIC001', 'AC', 2),
 ('Gestión de Proyectos TI', 'GETI001', 'AC', 3);
 
--- Obtener los IDs de los programas académicos recién insertados
--- (Asumiendo que son los IDs 5, 6, 7 si ya existían 4 programas anteriormente)
 
--- Asignar materias a Desarrollo de Software (programa_academico_id = 5)
 INSERT INTO programa_academico_materia (programa_academico_id, materia_id, estado) VALUES
--- Materias básicas compartidas
-(5, 1, 'AC'),  -- Programación I
-(5, 2, 'AC'),  -- Matemáticas I
-(5, 6, 'AC'),  -- Estadística
-(5, 7, 'AC'),  -- Base de Datos
-(5, 8, 'AC'),  -- Cálculo Diferencial
-
--- Materias específicas de Desarrollo de Software
-(5, 9, 'AC'),  -- Programación III
-(5, 10, 'AC'), -- Desarrollo Web Frontend
-(5, 11, 'AC'), -- Desarrollo Web Backend
-(5, 12, 'AC'), -- Metodologías Ágiles
-(5, 13, 'AC'), -- Arquitectura de Software
-(5, 14, 'AC'), -- Testing y QA
-(5, 15, 'AC'), -- DevOps y CI/CD
-(5, 16, 'AC'), -- Desarrollo Mobile
-
--- Materias transversales
-(5, 33, 'AC'), -- Inglés Técnico
-(5, 34, 'AC'), -- Ética Profesional
-(5, 35, 'AC'), -- Gestión de Proyectos TI
-
--- Asignar materias a Ciberseguridad (programa_academico_id = 6)
-INSERT INTO programa_academico_materia (programa_academico_id, materia_id, estado) VALUES
--- Materias básicas compartidas
-(6, 1, 'AC'),  -- Programación I
-(6, 2, 'AC'),  -- Matemáticas I
-(6, 6, 'AC'),  -- Estadística
-(6, 7, 'AC'),  -- Base de Datos
-
--- Materias específicas de Ciberseguridad
-(6, 17, 'AC'), -- Fundamentos de Ciberseguridad
-(6, 18, 'AC'), -- Criptografía
-(6, 19, 'AC'), -- Ethical Hacking
-(6, 20, 'AC'), -- Forense Digital
-(6, 21, 'AC'), -- Seguridad en Redes
-(6, 22, 'AC'), -- Gestión de Riesgos
-(6, 23, 'AC'), -- Compliance y Auditoría
-(6, 24, 'AC'), -- Incident Response
-
--- Materias de redes (útiles para ciberseguridad)
-(6, 25, 'AC'), -- Fundamentos de Redes
-(6, 29, 'AC'), -- Protocolos de Red
-
--- Materias transversales
-(6, 33, 'AC'), -- Inglés Técnico
-(6, 34, 'AC'), -- Ética Profesional
-(6, 35, 'AC'), -- Gestión de Proyectos TI
-
--- Asignar materias a Redes de la Información (programa_academico_id = 7)
-INSERT INTO programa_academico_materia (programa_academico_id, materia_id, estado) VALUES
--- Materias básicas compartidas
-(7, 2, 'AC'),  -- Matemáticas I
-(7, 3, 'AC'),  -- Física I
-(7, 6, 'AC'),  -- Estadística
-
--- Materias específicas de Redes
-(7, 25, 'AC'), -- Fundamentos de Redes
-(7, 26, 'AC'), -- Configuración de Routers
-(7, 27, 'AC'), -- Configuración de Switches
-(7, 28, 'AC'), -- Protocolos de Red
-(7, 29, 'AC'), -- Administración de Servidores
-(7, 30, 'AC'), -- Virtualización
-(7, 31, 'AC'), -- Cloud Computing
-(7, 32, 'AC'), -- Monitoreo de Redes
-
--- Materias de seguridad (importantes para redes)
-(7, 17, 'AC'), -- Fundamentos de Ciberseguridad
-(7, 21, 'AC'), -- Seguridad en Redes
-
--- Programación básica
-(7, 1, 'AC'),  -- Programación I
-
--- Materias transversales
-(7, 33, 'AC'), -- Inglés Técnico
-(7, 34, 'AC'), -- Ética Profesional
-(7, 35, 'AC'); -- Gestión de Proyectos TI
+(1, 1, 'AC'),   -- Programación I
+(1, 2, 'AC'),   -- Matemáticas I
+(1, 4, 'AC'),   -- Estadística
+(1, 5, 'AC'),   -- Base de Datos
+(1, 6, 'AC'),   -- Cálculo Diferencial
+(1, 7, 'AC'),   -- Programación III
+(1, 8, 'AC'),   -- Desarrollo Web Frontend
+(1, 9, 'AC'),   -- Desarrollo Web Backend
+(1, 10, 'AC'),  -- Metodologías Ágiles
+(1, 11, 'AC'),  -- Arquitectura de Software
+(1, 12, 'AC'),  -- Testing y QA
+(1, 13, 'AC'),  -- DevOps y CI/CD
+(1, 14, 'AC'),  -- Desarrollo Mobile
+(1, 31, 'AC'),  -- Inglés Técnico
+(1, 32, 'AC'),  -- Ética Profesional
+(1, 33, 'AC'),  -- Gestión de Proyectos TI
+(2, 1, 'AC'),   -- Programación I
+(2, 2, 'AC'),   -- Matemáticas I
+(2, 4, 'AC'),   -- Estadística
+(2, 5, 'AC'),   -- Base de Datos
+(2, 15, 'AC'),  -- Fundamentos de Ciberseguridad
+(2, 16, 'AC'),  -- Criptografía
+(2, 17, 'AC'),  -- Ethical Hacking
+(2, 18, 'AC'),  -- Forense Digital
+(2, 19, 'AC'),  -- Seguridad en Redes
+(2, 20, 'AC'),  -- Gestión de Riesgos
+(2, 21, 'AC'),  -- Compliance y Auditoría
+(2, 22, 'AC'),  -- Incident Response
+(2, 23, 'AC'),  -- Fundamentos de Redes
+(2, 26, 'AC'),  -- Protocolos de Red
+(2, 31, 'AC'),  -- Inglés Técnico
+(2, 32, 'AC'),  -- Ética Profesional
+(2, 33, 'AC'),  -- Gestión
+(3, 2, 'AC'),   -- Matemáticas I
+(3, 3, 'AC'),   -- Física I
+(3, 4, 'AC'),   -- Estadística
+(3, 23, 'AC'),  -- Fundamentos de Redes
+(3, 24, 'AC'),  -- Configuración de Routers
+(3, 25, 'AC'),  -- Configuración de Switches
+(3, 26, 'AC'),  -- Protocolos de Red
+(3, 27, 'AC'),  -- Administración de Servidores
+(3, 28, 'AC'),  -- Virtualización
+(3, 29, 'AC'),  -- Cloud Computing
+(3, 30, 'AC'),  -- Monitoreo de Redes
+(3, 15, 'AC'),  -- Fundamentos de Ciberseguridad
+(3, 19, 'AC'),  -- Seguridad en Redes
+(3, 1, 'AC'),   -- Programación I
+(3, 31, 'AC'),  -- Inglés Técnico
+(3, 32, 'AC'),  -- Ética Profesional
+(3, 33, 'AC');  -- Gesti

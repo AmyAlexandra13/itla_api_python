@@ -205,5 +205,85 @@ create table if not exists programa_academico_materia(
     constraint programa_academico_materia_materia_id_fk
         foreign key(materia_id)
         references materia(materia_id)
+        on delete restrict,
+
+    constraint programa_academico_materia_id_programa_academico_id_uk
+        unique(programa_academico_id, materia_id)
+);
+
+create table if not exists estudiante(
+    estudiante_id bigserial primary key not null,
+    nombres varchar (250) not null,
+    apellidos varchar (250) not null,
+    correo varchar(50) not null,
+    matricula varchar (20) null,
+    estado varchar(30) not null,
+    usuario_creacion_id bigint not null,
+    fecha_creacion timestamp not null default (now() at time zone 'EDT'),
+    usuario_actualizacion_id bigint null,
+    fecha_actualizacion timestamp null,
+
+    constraint estudiante_estado_ck
+        check(estado in ('REGISTRADO', 'PENDIENTE_DOCUMENTO', 'PENDIENTE_RESPUESTA', 'ACEPTADO', 'RECHAZADO', 'ACTIVO', 'GRADUADO')),
+
+    constraint estudiante_usuario_creacion_id_fk
+        foreign key(usuario_creacion_id)
+        references usuario(usuario_id)
+        on delete restrict,
+
+    constraint estudiante_usuario_actualizacion_id_fk
+        foreign key(usuario_actualizacion_id)
+        references usuario(usuario_id)
+        on delete restrict,
+
+    constraint estudiante_correo_uk
+        unique(correo)
+)
+
+create table if not exists estudiante_documento(
+    estudiante_documento_id bigserial primary key not null,
+    estudiante_id bigint not null,
+    tipo_documento varchar(20) not null,
+    content bytea NOT NULL,
+    estado varchar(2) not null,
+    fecha_creacion timestamp not null default (now() at time zone 'EDT'),
+    fecha_actualizacion timestamp null,
+
+    constraint estudiante_documento_estado_ck
+        check(estado in ('AC', 'IN')),
+
+    constraint estudiante_documento_estudiante_id_fk
+        foreign key(estudiante_id)
+        references estudiante(estudiante_id)
+        on delete restrict,
+
+    constraint estudiante_documento_tipo_documento_ck
+        check(tipo_documento in ('CEDULA', 'ACTA_NACIMIENTO', 'RECORD_ESCUELA')),
+
+    constraint estudiante_documento_estudiante_id_tipo_documento_uk
+        unique(estudiante_id, tipo_documento)
+);
+
+create table if not exists estudiante_programa_academico(
+    estudiante_programa_academico_id bigserial primary key not null,
+    estudiante_id bigint not null,
+    programa_academico_id bigint not null,
+    estado varchar(10) not null,
+    fecha_creacion timestamp not null default (now() at time zone 'EDT'),
+    fecha_actualizacion timestamp null,
+
+    constraint estudiante_programa_academico_estado_ck
+        check(estado in ('AC', 'IN', 'EN_CURSO', 'TERMINADO')),
+
+    constraint estudiante_programa_academico_estudiante_id_fk
+        foreign key(estudiante_id)
+        references estudiante(estudiante_id)
+        on delete restrict,
+
+    constraint estudiante_programa_academico_programa_academico_id_fk
+        foreign key (programa_academico_id)
+        references programa_academico(programa_academico_id)
         on delete restrict
 );
+
+
