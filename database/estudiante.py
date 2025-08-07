@@ -1,3 +1,6 @@
+import math
+from typing import Dict, Any, List
+
 import psycopg2
 from pydantic import EmailStr
 
@@ -73,14 +76,24 @@ def query_seleccionar_datos_estudiante():
            '''
 
 
+def query_contar_estudiantes():
+    return '''
+           select count(*) as total
+           from estudiante e
+                    join usuario uc on e.usuario_creacion_id = uc.usuario_id
+                    left join usuario ua on e.usuario_actualizacion_id = ua.usuario_id
+           '''
+
+
 def obtener_estudiante_pg(
         estudiante_id: int | None = None,
         correo: EmailStr | None = None,
         estado: str | None = None,
+        numero_pagina: int | None = None,
+        limite: int | None = None,
         conexion: psycopg2.extensions.connection | None = None
-):
-    sql = query_seleccionar_datos_estudiante()
-
+) -> Dict[str, Any] | List[Estudiante] | None:
+    # Construir las condiciones WHERE
     where_exprss = []
     values = []
 
@@ -96,19 +109,77 @@ def obtener_estudiante_pg(
         where_exprss.append("e.estado = %s")
         values.append(estado)
 
+    where_clause = ""
     if where_exprss:
-        sql += " where " + " and ".join(where_exprss)
+        where_clause = " where " + " and ".join(where_exprss)
 
-    sql += " order by e.fecha_creacion desc;"
+    # Si se solicita paginación
+    if numero_pagina is not None and limite is not None:
+        # Validar parámetros de paginación
+        if numero_pagina < 1:
+            numero_pagina = 1
+        if limite < 1:
+            limite = 10
 
-    results = execute_query(sql, values, conn=conexion)
+        # Contar total de registros
+        sql_count = query_contar_estudiantes() + where_clause + ";"
+        count_results = execute_query(sql_count, values, conn=conexion)
 
-    if not results:
-        return None
+        if not count_results:
+            return {
+                "estudiantes": [],
+                "paginacion": {
+                    "total": 0,
+                    "numeroPagina": numero_pagina,
+                    "limite": limite,
+                    "totalPaginas": 0
+                }
+            }
 
-    items = [Estudiante(**item) for item in results]
+        total_registros = count_results[0]['total']
+        total_paginas = math.ceil(total_registros / limite)
 
-    return items
+        # Si la página solicitada es mayor al total de páginas, devolver la última página
+        if numero_pagina > total_paginas and total_paginas > 0:
+            numero_pagina = total_paginas
+
+        # Construir query con paginación
+        offset = (numero_pagina - 1) * limite
+        sql = query_seleccionar_datos_estudiante()
+        sql += where_clause
+        sql += " order by e.fecha_creacion desc"
+        sql += f" limit {limite} offset {offset};"
+
+        results = execute_query(sql, values, conn=conexion)
+
+        estudiantes = []
+        if results:
+            estudiantes = [Estudiante(**item) for item in results]
+
+        return {
+            "estudiantes": estudiantes,
+            "paginacion": {
+                "total": total_registros,
+                "numeroPagina": numero_pagina,
+                "limite": limite,
+                "totalPaginas": total_paginas
+            }
+        }
+
+    # Sin paginación - comportamiento original
+    else:
+        sql = query_seleccionar_datos_estudiante()
+        sql += where_clause
+        sql += " order by e.fecha_creacion desc;"
+
+        results = execute_query(sql, values, conn=conexion)
+
+        if not results:
+            return None
+
+        items = [Estudiante(**item) for item in results]
+
+        return items
 
 
 def actualizar_estudiante_pg(

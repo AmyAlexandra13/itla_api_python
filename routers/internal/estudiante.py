@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Union
 
 from fastapi import APIRouter, status, Body, Depends, HTTPException, Path, Query
 from pydantic import EmailStr
@@ -8,10 +8,11 @@ from database.connection import get_connection
 from database.estudiante import registrar_estudiante_pg, obtener_estudiante_pg
 from models.estudiante import Estudiante
 from models.generico import ResponseData, ResponseList
+from models.paginacion import ResponsePaginado
 from models.requests.registrar_estudiante import RegistrarEstudianteRequest
 from shared.constante import EstadoEstudiante, Rol
-from shared.permission import get_current_user
 from shared.email_service import email_service
+from shared.permission import get_current_user
 
 router = APIRouter(prefix="/estudiante", tags=["Estudiante"])
 
@@ -90,7 +91,11 @@ def registrar_estudiante(
 
 
 @router.get("/",
-            responses={status.HTTP_200_OK: {"model": ResponseList[List[Estudiante]]}},
+            responses={
+                status.HTTP_200_OK: {
+                    "model": Union[ResponseList[List[Estudiante]], ResponsePaginado[Estudiante]]
+                }
+            },
             summary='obtenerEstudiantes', status_code=status.HTTP_200_OK)
 def obtener_estudiantes(
         _: dict = Depends(get_current_user(Rol.ADMINISTRADOR)),
@@ -98,17 +103,30 @@ def obtener_estudiantes(
             None,
             description="Estado del estudiante",
             regex="^(REGISTRADO|PENDIENTE_DOCUMENTO|ACEPTADO|RECHAZADO|GRADUADO)$"
+        ),
+        numeroPagina: int | None = Query(
+            1,
+            description="Número de página para paginación",
+            ge=1
+        ),
+        limite: int | None = Query(
+            10,
+            description="Límite de registros por página",
+            ge=1,
+            le=20
         )
 ):
     conexion = get_connection()
 
     try:
-        estudiantes = obtener_estudiante_pg(
+        resultado = obtener_estudiante_pg(
             estado=estado,
+            numero_pagina=numeroPagina,
+            limite=limite,
             conexion=conexion
         )
 
-        if not estudiantes:
+        if not resultado:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail='No se encontraron estudiantes'
@@ -116,7 +134,7 @@ def obtener_estudiantes(
 
         conexion.commit()
 
-        return ResponseList(data=estudiantes)
+        return ResponsePaginado[Estudiante](**resultado)
 
     except HTTPException as e:
         logging.exception("Error controlado")
@@ -153,7 +171,17 @@ def obtener_estudiante_por_id(
                 detail='No se encontró el estudiante'
             )
 
-        estudiante = estudiantes[0]
+        # El resultado será una lista cuando no hay paginación
+        if isinstance(estudiantes, list):
+            estudiante = estudiantes[0]
+        else:
+            # Si por alguna razón llega como dict, manejarlo
+            estudiante = estudiantes['estudiantes'][0] if estudiantes['estudiantes'] else None
+            if not estudiante:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail='No se encontró el estudiante'
+                )
 
         conexion.commit()
 
@@ -194,7 +222,17 @@ def obtener_estudiante_por_correo(
                 detail='No se encontró un estudiante con ese correo'
             )
 
-        estudiante = estudiantes[0]
+        # El resultado será una lista cuando no hay paginación
+        if isinstance(estudiantes, list):
+            estudiante = estudiantes[0]
+        else:
+            # Si por alguna razón llega como dict, manejarlo
+            estudiante = estudiantes['estudiantes'][0] if estudiantes['estudiantes'] else None
+            if not estudiante:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail='No se encontró un estudiante con ese correo'
+                )
 
         conexion.commit()
 
