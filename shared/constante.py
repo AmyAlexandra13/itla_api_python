@@ -23,3 +23,11 @@ class TipoDocumento:
     CEDULA = 'CEDULA'
     ACTA_NACIMIENTO = 'ACTA_NACIMIENTO'
     RECORD_ESCUELA = 'RECORD_ESCUELA'
+
+class EstadoDocumento:
+    PENDIENTE = 'PENDIENTE'
+    VALIDO = 'VALIDO'
+    RECHAZADO = 'RECHAZADO'
+
+class SizeDocumento:
+    MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB por documento

@@ -245,12 +245,12 @@ create table if not exists estudiante_documento(
     estudiante_id bigint not null,
     tipo_documento varchar(20) not null,
     content bytea NOT NULL,
-    estado varchar(2) not null,
+    estado varchar(20) not null,
     fecha_creacion timestamp not null default (now() at time zone 'EDT'),
     fecha_actualizacion timestamp null,
 
     constraint estudiante_documento_estado_ck
-        check(estado in ('AC', 'IN')),
+        check(estado in ('PENDIENTE', 'VALIDO', 'RECHAZADO')),
 
     constraint estudiante_documento_estudiante_id_fk
         foreign key(estudiante_id)
