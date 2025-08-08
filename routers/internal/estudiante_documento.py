@@ -331,3 +331,97 @@ def actualizar_estado_documento(
 
     finally:
         conexion.close()
+
+
+@router.get("/estudiante/{estudianteId}/descargar",
+            summary="Descargar todos los documentos del estudiante en un ZIP",
+            status_code=status.HTTP_200_OK)
+def descargar_documentos_estudiante(
+        estudiante_id: int = Path(alias='estudianteId', description='ID del estudiante'),
+        _: dict = Depends(get_current_user(Rol.ADMINISTRADOR))
+) -> StreamingResponse:
+    import zipfile
+
+    conexion = get_connection()
+
+    try:
+        # Verificar que el estudiante existe
+        estudiantes = obtener_estudiante_pg(
+            estudiante_id=estudiante_id,
+            conexion=conexion
+        )
+
+        if not estudiantes:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No se encontró el estudiante especificado"
+            )
+
+        # El resultado puede ser lista o dict (paginado), manejamos ambos casos
+        if isinstance(estudiantes, list):
+            estudiante = estudiantes[0]
+        else:
+            estudiante = estudiantes['estudiantes'][0] if estudiantes['estudiantes'] else None
+            if not estudiante:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="No se encontró el estudiante especificado"
+                )
+
+        # Obtener todos los documentos del estudiante
+        documentos = obtener_estudiante_documento_pg(
+            estudiante_id=estudiante_id,
+            conexion=conexion
+        )
+
+        if not documentos:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="El estudiante no tiene documentos registrados"
+            )
+
+        # Crear el ZIP directamente en memoria
+        zip_buffer = BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for documento in documentos:
+                # Obtener el contenido del documento
+                content = obtener_content_estudiante_documento_pg(
+                    estudiante_documento_id=documento.estudianteDocumentoId,
+                    conexion=conexion
+                )
+
+                if content is not None:
+                    # Generar nombre del archivo
+                    tipo_doc = documento.tipoDocumento.lower()
+                    estado_doc = documento.estado.lower()
+                    fecha_creacion = documento.fechaCreacion.replace(':', '-').replace(' ', '_')
+                    filename = f"{tipo_doc}_{estado_doc}_{fecha_creacion}.pdf"
+
+                    # Agregar el archivo al ZIP
+                    zip_file.writestr(filename, content)
+
+        # Posicionar el cursor al inicio del buffer
+        zip_buffer.seek(0)
+
+        # Generar nombre del archivo ZIP
+        estudiante_nombres = estudiante.nombres.replace(' ', '_')
+        estudiante_apellidos = estudiante.apellidos.replace(' ', '_')
+        zip_filename = f"documentos_{estudiante_nombres}_{estudiante_apellidos}.zip"
+
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename={zip_filename}"}
+        )
+
+    except HTTPException as e:
+        logging.exception("Error esperado al descargar documentos del estudiante")
+        raise e
+
+    except Exception as e:
+        logging.exception("Error inesperado al descargar documentos del estudiante")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+    finally:
+        conexion.close()
