@@ -87,12 +87,12 @@ async def subir_documento_estudiante(
             )
 
         # Validar tipo de archivo (opcional - puedes agregar más validaciones)
-        allowed_extensions = ['.pdf', '.jpg', '.jpeg', '.png']
+        allowed_extensions = ['.pdf']
         file_extension = file.filename.lower().split('.')[-1]
         if f'.{file_extension}' not in allowed_extensions:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Tipo de archivo no permitido. Solo se permiten PDF, JPG, JPEG y PNG"
+                detail="Tipo de archivo no permitido. Solo se permiten PDF"
             )
 
         # Leer el contenido del archivo
@@ -264,7 +264,7 @@ def descargar_documento_estudiante(
 
         return StreamingResponse(
             file_like,
-            media_type="application/octet-stream",
+            media_type="application/pdf",
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
 
