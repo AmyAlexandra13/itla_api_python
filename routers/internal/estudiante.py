@@ -1,12 +1,11 @@
 import logging
-from typing import List, Union
 
 from fastapi import APIRouter, status, Body, Depends, HTTPException, Path, Query
 
 from database.connection import get_connection
 from database.estudiante import registrar_estudiante_pg, obtener_estudiante_pg
 from models.estudiante import Estudiante
-from models.generico import ResponseData, ResponseList
+from models.generico import ResponseData
 from models.paginacion import ResponsePaginado
 from models.requests.registrar_estudiante import RegistrarEstudianteRequest
 from shared.constante import EstadoEstudiante, Rol
@@ -95,7 +94,7 @@ def registrar_estudiante(
 @router.get("/",
             responses={
                 status.HTTP_200_OK: {
-                    "model": Union[ResponseList[List[Estudiante]], ResponsePaginado[Estudiante]]
+                    "model": ResponsePaginado[Estudiante]
                 }
             },
             summary='obtenerEstudiantes', status_code=status.HTTP_200_OK)
