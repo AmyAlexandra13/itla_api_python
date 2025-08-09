@@ -200,7 +200,6 @@ def actualizar_estudiante_pg(
     fields = []
     values = []
 
-    # Siempre actualizar el usuario que modificó
     fields.append("usuario_actualizacion_id = %s")
     values.append(usuario_actualizacion_id)
 

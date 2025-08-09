@@ -228,3 +228,41 @@ def actualizar_estudiante_documento_pg(
         return None
 
     return documento_actualizado[0]['estudianteDocumentoId']
+
+def verificar_documentos_validos_completos_pg(
+        estudiante_id: int,
+        conexion: psycopg2.extensions.connection | None = None
+):
+    sql = '''
+        select 
+            count(distinct tipo_documento) as documentos_validos,
+            array_agg(distinct tipo_documento) as tipos_validos
+        from estudiante_documento
+        where estudiante_id = %s 
+          and estado = 'VALIDO'
+          and tipo_documento in ('CEDULA', 'ACTA_NACIMIENTO', 'RECORD_ESCUELA');
+    '''
+
+    values = [estudiante_id]
+
+    results = execute_query(sql, values, conn=conexion)
+
+    if not results:
+        return {
+            'tiene_todos_validos': False,
+            'documentos_validos': 0,
+            'tipos_validos': []
+        }
+
+    result = results[0]
+    documentos_validos = result['documentosValidos'] or 0
+    tipos_validos = result['tiposValidos'] or []
+
+    documentos_requeridos = 3
+    tiene_todos_validos = documentos_validos == documentos_requeridos
+
+    return {
+        'tiene_todos_validos': tiene_todos_validos,
+        'documentos_validos': documentos_validos,
+        'tipos_validos': tipos_validos
+    }

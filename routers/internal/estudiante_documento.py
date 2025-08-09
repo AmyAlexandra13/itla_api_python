@@ -2,21 +2,22 @@ import logging
 from io import BytesIO
 from typing import List
 
-from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, File, Form, Path, Query
+from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, File, Form, Path, Query, Body
 from starlette.responses import StreamingResponse
 
 from database.connection import get_connection
-from database.estudiante import obtener_estudiante_pg
+from database.estudiante import obtener_estudiante_pg, actualizar_estudiante_pg
 from database.estudiante_documento import (
     registrar_estudiante_documento_pg,
     obtener_estudiante_documento_pg,
     verificar_documento_existente_pg,
     verificar_documentos_completos_pg,
     obtener_content_estudiante_documento_pg,
-    actualizar_estudiante_documento_pg
+    actualizar_estudiante_documento_pg, verificar_documentos_validos_completos_pg
 )
 from models.estudiante_documento import EstudianteDocumento
 from models.generico import ResponseData, ResponseList
+from models.requests.actualizar_estudiante_documento import ActualizarDocumentoRequest
 from shared.constante import EstadoEstudiante, Rol, EstadoDocumento, SizeDocumento
 from shared.email_service import email_service
 from shared.permission import get_current_user
@@ -280,19 +281,23 @@ def descargar_documento_estudiante(
         conexion.close()
 
 
-@router.patch("/{documentoId}/estado",
+@router.patch("/actualizar-estado",
               summary='actualizarEstadoDocumento', status_code=status.HTTP_204_NO_CONTENT)
 def actualizar_estado_documento(
-        documentoId: int = Path(..., description="ID del documento"),
-        estado: str = Form(..., regex="^(PENDIENTE|VALIDO|RECHAZADO)$"),
-        _: dict = Depends(get_current_user(Rol.ADMINISTRADOR))
+        request: ActualizarDocumentoRequest = Body(),
+        current_user: dict = Depends(get_current_user(Rol.ADMINISTRADOR))
 ):
     conexion = get_connection()
 
     try:
+        usuario_id = current_user['usuarioId']
+        documento_id = request.documentoId
+        estudiante_id = request.estudianteId
+        estado = request.estado
+
         # Verificar que el documento existe
         documentos = obtener_estudiante_documento_pg(
-            estudiante_documento_id=documentoId,
+            estudiante_documento_id=documento_id,
             conexion=conexion
         )
 
@@ -302,9 +307,30 @@ def actualizar_estado_documento(
                 detail='No se encontró el documento para actualizar'
             )
 
+        documento = documentos[0]
+
+        # Validar que el documento pertenece al estudiante especificado
+        if documento.estudianteId != estudiante_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='El documento no pertenece al estudiante especificado'
+            )
+
+        # Verificar que el estudiante existe
+        estudiantes = obtener_estudiante_pg(
+            estudiante_id=estudiante_id,
+            conexion=conexion
+        )
+
+        if not estudiantes:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='No se encontró el estudiante especificado'
+            )
+
         # Actualizar el estado del documento
         documento_actualizado = actualizar_estudiante_documento_pg(
-            estudiante_documento_id=documentoId,
+            estudiante_documento_id=documento_id,
             estado=estado,
             conexion=conexion
         )
@@ -314,6 +340,46 @@ def actualizar_estado_documento(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail='No se pudo actualizar el estado del documento'
             )
+
+        if estado == EstadoDocumento.VALIDO:
+            documentos_validos_status = verificar_documentos_validos_completos_pg(
+                estudiante_id=estudiante_id,
+                conexion=conexion
+            )
+
+            if documentos_validos_status['tiene_todos_validos']:
+                estudiantes_actualizados = obtener_estudiante_pg(
+                    estudiante_id=estudiante_id,
+                    conexion=conexion
+                )
+
+                estudiante = estudiantes_actualizados[0] if estudiantes_actualizados else None
+
+                correo_estudiante = estudiante.correo
+
+                if estudiante and estudiante.estado in [EstadoEstudiante.REGISTRADO,
+                                                        EstadoEstudiante.PENDIENTE_DOCUMENTO]:
+
+                    estudiante_actualizado = actualizar_estudiante_pg(
+                        estudiante_id=estudiante_id,
+                        usuario_actualizacion_id=usuario_id,
+                        estado=EstadoEstudiante.PENDIENTE_RESPUESTA,
+                        conexion=conexion
+                    )
+
+                    if estudiante_actualizado:
+                        logging.info(
+                            f"Estudiante {estudiante_id} actualizado a estado PENDIENTE_RESPUESTA - todos los documentos están válidos")
+
+                        email_service.enviar_email_documentos_validados(
+                            destinatario=correo_estudiante,
+                            nombres=estudiante.nombres,
+                            apellidos=estudiante.apellidos
+                        )
+
+                    else:
+                        logging.warning(f"No se pudo actualizar el estado del estudiante {estudiante_id}")
+                        raise Exception("No se pudo actualizar el estado del estudiante")
 
         conexion.commit()
 
