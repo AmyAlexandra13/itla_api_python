@@ -2,7 +2,6 @@ import logging
 from typing import List, Union
 
 from fastapi import APIRouter, status, Body, Depends, HTTPException, Path, Query
-from pydantic import EmailStr
 
 from database.connection import get_connection
 from database.estudiante import registrar_estudiante_pg, obtener_estudiante_pg
@@ -28,8 +27,11 @@ def registrar_estudiante(
 
     try:
         # Verificar que no exista un estudiante con el mismo correo
+
+        correo = str(request.correo)
+
         estudiantes_existentes = obtener_estudiante_pg(
-            correo=request.correo,
+            correo=correo,
             conexion=conexion
         )
 
@@ -104,6 +106,14 @@ def obtener_estudiantes(
             description="Estado del estudiante",
             regex="^(REGISTRADO|PENDIENTE_DOCUMENTO|ACEPTADO|RECHAZADO|GRADUADO)$"
         ),
+        matricula: str | None = Query(
+            default=None,
+            description='Matricula del estudiante'
+        ),
+        correo: str | None = Query(
+            default=None,
+            description='Correo del estudiante'
+        ),
         numeroPagina: int | None = Query(
             1,
             description="Número de página para paginación",
@@ -122,6 +132,8 @@ def obtener_estudiantes(
         resultado = obtener_estudiante_pg(
             estado=estado,
             numero_pagina=numeroPagina,
+            correo=correo,
+            matricula=matricula,
             limite=limite,
             conexion=conexion
         )
@@ -205,7 +217,7 @@ def obtener_estudiante_por_id(
             responses={status.HTTP_200_OK: {"model": ResponseData[Estudiante]}},
             summary='obtenerEstudiantePorCorreo', status_code=status.HTTP_200_OK)
 def obtener_estudiante_por_correo(
-        correo: EmailStr = Path(description='Correo del estudiante'),
+        correo: str = Path(description='Correo del estudiante'),
         _: dict = Depends(get_current_user(Rol.ADMINISTRADOR))
 ):
     conexion = get_connection()

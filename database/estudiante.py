@@ -87,7 +87,7 @@ def query_contar_estudiantes():
 
 def obtener_estudiante_pg(
         estudiante_id: int | None = None,
-        correo: EmailStr | None = None,
+        correo: str | None = None,
         estado: str | None = None,
         matricula: str | None = None,
         numero_pagina: int | None = None,
@@ -103,8 +103,8 @@ def obtener_estudiante_pg(
         values.append(estudiante_id)
 
     if correo is not None:
-        where_exprss.append("e.correo = %s")
-        values.append(correo)
+        where_exprss.append("upper(e.correo) = %s")
+        values.append(correo.upper())
 
     if estado is not None:
         where_exprss.append("e.estado = %s")
