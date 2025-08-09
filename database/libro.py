@@ -113,6 +113,7 @@ def query_seleccionar_datos_libro():
 def obtener_libros_pg(
         libro_id: int | None = None,
         estado: str | None = None,
+        titulo: str | None = None,
         conexion: psycopg2.extensions.connection | None = None
 ):
     sql = query_seleccionar_datos_libro()
@@ -127,6 +128,11 @@ def obtener_libros_pg(
     if estado is not None:
         where_exprss.append("l.estado = %s")
         values.append(estado)
+
+    if titulo:
+        where_exprss.append("upper(l.titulo) ilike upper(%s)")
+        values.append(f"%{titulo}%")
+
 
     if where_exprss:
         sql += " WHERE " + " AND ".join(where_exprss)

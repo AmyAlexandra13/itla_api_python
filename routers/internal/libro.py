@@ -89,13 +89,15 @@ async def registrar_libro(
 )
 def buscar_libros(
         _: dict = Depends(get_current_user(Rol.ADMINISTRADOR)),
-        estado: str | None = Query(None, min_length=2, max_length=2)
+        estado: str | None = Query(None, min_length=2, max_length=2, regex="^(AC|IN)$"),
+        titulo: str | None = Query(default=None, min_length=1, max_length=250)
 ):
     conexion = get_connection()
 
     try:
         libros = obtener_libros_pg(
             estado=estado,
+            titulo=titulo,
             conexion=conexion
         )
 
