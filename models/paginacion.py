@@ -10,5 +10,5 @@ class Paginacion(BaseModel):
     totalPaginas: int
 
 class ResponsePaginado(BaseModel, Generic[T]):
-    estudiantes: List[T]
+    items: List[T]
     paginacion: Paginacion

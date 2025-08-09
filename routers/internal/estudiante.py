@@ -145,7 +145,7 @@ def obtener_estudiantes(
 
         conexion.commit()
 
-        return ResponsePaginado[Estudiante](**resultado)
+        return ResponsePaginado[Estudiante](items=resultado["estudiantes"], paginacion=resultado["paginacion"])
 
     except HTTPException as e:
         logging.exception("Error controlado")

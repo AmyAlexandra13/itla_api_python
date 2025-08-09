@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from datetime import datetime
 
 from fastapi import APIRouter, status, Body, Depends, HTTPException, Path, Query
 
@@ -7,7 +7,8 @@ from database.categoria_evento import obtener_categoria_evento_pg
 from database.connection import get_connection
 from database.evento import registrar_evento_pg, obtener_evento_pg, actualizar_evento_pg
 from models.evento import Evento
-from models.generico import ResponseData, ResponseList
+from models.generico import ResponseData
+from models.paginacion import ResponsePaginado
 from models.requests.actualizar_evento import ActualizarEventoRequest
 from models.requests.registrar_evento import RegistrarEventoRequest
 from shared.constante import Estado, Rol
@@ -76,18 +77,79 @@ def registrar_evento(request: RegistrarEventoRequest = Body(),
 
 
 @router.get("/",
-            responses={status.HTTP_200_OK: {"model": ResponseList[List[Evento]]}},
+            responses={
+                status.HTTP_200_OK: {
+                    "model": ResponsePaginado[Evento]
+                }
+            },
             summary='obtenerEvento', status_code=status.HTTP_200_OK)
-def buscar_evento(_: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
+def buscar_evento(
+        _: dict = Depends(get_current_user(Rol.ADMINISTRADOR)),
+        estado: str | None = Query(
+            None,
+            description="Estado del evento",
+            regex="^(AC|IN)$"
+        ),
+        categoriaEventoId: int | None = Query(
+            None,
+            description="ID de la categoría del evento",
+            ge=1
+        ),
+        fechaInicio: datetime | None = Query(
+            None,
+            description="Fecha de inicio para filtrar eventos (requiere fechaFin)"
+        ),
+        fechaFin: datetime | None = Query(
+            None,
+            description="Fecha de fin para filtrar eventos (requiere fechaInicio)"
+        ),
+        numeroPagina: int | None = Query(
+            1,
+            description="Número de página para paginación",
+            ge=1
+        ),
+        limite: int | None = Query(
+            10,
+            description="Límite de registros por página",
+            ge=1,
+            le=20
+        )
+):
     conexion = get_connection()
 
     try:
+        # Validar que si se proporciona fechaInicio, también se proporcione fechaFin
+        if fechaInicio is not None and fechaFin is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Si proporciona fechaInicio, también debe proporcionar fechaFin"
+            )
 
-        eventos = obtener_evento_pg(
+        if fechaFin is not None and fechaInicio is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Si proporciona fechaFin, también debe proporcionar fechaInicio"
+            )
+
+        # Validar que fechaInicio sea menor que fechaFin
+        if fechaInicio is not None and fechaFin is not None:
+            if fechaInicio >= fechaFin:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="La fechaInicio debe ser menor que la fechaFin"
+                )
+
+        resultado = obtener_evento_pg(
+            estado=estado,
+            categoria_evento_id=categoriaEventoId,
+            fecha_inicio=fechaInicio,
+            fecha_fin=fechaFin,
+            numero_pagina=numeroPagina,
+            limite=limite,
             conexion=conexion
         )
 
-        if not eventos:
+        if not resultado:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail='No se encontraron eventos'
@@ -95,25 +157,17 @@ def buscar_evento(_: dict = Depends(get_current_user(Rol.ADMINISTRADOR))):
 
         conexion.commit()
 
-        return ResponseList(data=eventos)
+        return ResponsePaginado[Evento](items=resultado["eventos"], paginacion=resultado["paginacion"])
 
     except HTTPException as e:
-
-        logging.exception("Ocurrió un error inesperado")
-
+        logging.exception("Error controlado")
         conexion.rollback()
-
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
-
     except Exception as e:
-
         logging.exception("Ocurrió un error inesperado")
-
         conexion.rollback()
-
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
-
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
     finally:
         conexion.close()
