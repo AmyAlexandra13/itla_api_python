@@ -333,11 +333,11 @@ def actualizar_estado_documento(
         conexion.close()
 
 
-@router.get("/estudiante/{estudianteId}/descargar",
+@router.get("/estudiante/{matricula}/descargar",
             summary="Descargar todos los documentos del estudiante en un ZIP",
             status_code=status.HTTP_200_OK)
 def descargar_documentos_estudiante(
-        estudiante_id: int = Path(alias='estudianteId', description='ID del estudiante'),
+        matricula: str = Path(alias='matricula', description='Matricula del estudiante'),
         _: dict = Depends(get_current_user(Rol.ADMINISTRADOR))
 ) -> StreamingResponse:
     import zipfile
@@ -347,7 +347,7 @@ def descargar_documentos_estudiante(
     try:
         # Verificar que el estudiante existe
         estudiantes = obtener_estudiante_pg(
-            estudiante_id=estudiante_id,
+            matricula=matricula,
             conexion=conexion
         )
 
@@ -367,6 +367,8 @@ def descargar_documentos_estudiante(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="No se encontró el estudiante especificado"
                 )
+
+        estudiante_id = estudiante.estudianteId
 
         # Obtener todos los documentos del estudiante
         documentos = obtener_estudiante_documento_pg(

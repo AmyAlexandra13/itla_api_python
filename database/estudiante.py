@@ -89,6 +89,7 @@ def obtener_estudiante_pg(
         estudiante_id: int | None = None,
         correo: EmailStr | None = None,
         estado: str | None = None,
+        matricula: str | None = None,
         numero_pagina: int | None = None,
         limite: int | None = None,
         conexion: psycopg2.extensions.connection | None = None
@@ -108,6 +109,10 @@ def obtener_estudiante_pg(
     if estado is not None:
         where_exprss.append("e.estado = %s")
         values.append(estado)
+
+    if matricula is not None:
+        where_exprss.append("e.matricula = %s")
+        values.append(matricula)
 
     where_clause = ""
     if where_exprss:
