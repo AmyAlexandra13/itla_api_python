@@ -143,22 +143,22 @@ class UNICDAService:
             logging.error(f"Error inesperado en petición a UNICDA: {str(e)}")
             return None
 
-    # # Métodos de conveniencia para operaciones comunes
-    # def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
-    #     """Realiza una petición GET autenticada"""
-    #     return self.make_authenticated_request("GET", endpoint, params=params)
-    #
-    # def post(self, endpoint: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    #     """Realiza una petición POST autenticada"""
-    #     return self.make_authenticated_request("POST", endpoint, data=data)
-    #
-    # def put(self, endpoint: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    #     """Realiza una petición PUT autenticada"""
-    #     return self.make_authenticated_request("PUT", endpoint, data=data)
-    #
-    # def delete(self, endpoint: str) -> Optional[Dict[str, Any]]:
-    #     """Realiza una petición DELETE autenticada"""
-    #     return self.make_authenticated_request("DELETE", endpoint)
+    # Métodos de conveniencia para operaciones comunes
+    def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+        """Realiza una petición GET autenticada"""
+        return self.make_authenticated_request("GET", endpoint, params=params)
+
+    def post(self, endpoint: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Realiza una petición POST autenticada"""
+        return self.make_authenticated_request("POST", endpoint, data=data)
+
+    def put(self, endpoint: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Realiza una petición PUT autenticada"""
+        return self.make_authenticated_request("PUT", endpoint, data=data)
+
+    def delete(self, endpoint: str) -> Optional[Dict[str, Any]]:
+        """Realiza una petición DELETE autenticada"""
+        return self.make_authenticated_request("DELETE", endpoint)
 
 
 unicda_service = UNICDAService()

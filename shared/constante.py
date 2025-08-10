@@ -41,3 +41,14 @@ class EstadoEstudianteMateria:
 
 class Calificacion:
     MINIMO_APROBACION = 70
+
+
+class UNICDAEndpoints:
+    BASE_URL = "https://localhost:7192"
+    GENERATE_TOKEN = "/api/Auth/GenerateExternalAPIToken"
+    EVENTOS_PAGINATION = "/api/Evento/GetPagination"
+    ESTUDIANTES = "/api/Estudiantes"
+
+class UnicdaPaginacion:
+    PAGE = 1
+    PAGESIZE = 10
