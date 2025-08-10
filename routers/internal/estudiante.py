@@ -1,12 +1,14 @@
 import logging
+from datetime import datetime
 
 from fastapi import APIRouter, status, Body, Depends, HTTPException, Path, Query
 
 from database.connection import get_connection
-from database.estudiante import registrar_estudiante_pg, obtener_estudiante_pg
+from database.estudiante import registrar_estudiante_pg, obtener_estudiante_pg, actualizar_estudiante_pg
 from models.estudiante import Estudiante
 from models.generico import ResponseData, ResponseList
 from models.paginacion import ResponsePaginado
+from models.requests.actualizar_estudiante import ActualizarEstudianteRequest
 from models.requests.registrar_estudiante import RegistrarEstudianteRequest
 from shared.constante import EstadoEstudiante, Rol
 from shared.email_service import email_service
@@ -243,6 +245,133 @@ def obtener_estudiante_por_correo(
 
     except Exception as e:
         logging.exception("Ocurrió un error inesperado")
+        conexion.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+    finally:
+        conexion.close()
+
+
+@router.patch("/actualizar",
+              summary='actualizarEstudiante',
+              status_code=status.HTTP_204_NO_CONTENT)
+def actualizar_estudiante(
+        request: ActualizarEstudianteRequest = Body(),
+        current_user: dict = Depends(get_current_user(Rol.ADMINISTRADOR))
+):
+    conexion = get_connection()
+
+    try:
+        usuario_id = current_user['usuarioId']
+
+        estudiante_id = request.estudianteId
+
+        estudiantes_existentes = obtener_estudiante_pg(
+            estudiante_id=estudiante_id,
+            conexion=conexion
+        )
+
+        if not estudiantes_existentes:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No se encontró el estudiante especificado"
+            )
+
+        if isinstance(estudiantes_existentes, list):
+            estudiante_actual = estudiantes_existentes[0]
+        else:
+            estudiante_actual = estudiantes_existentes['estudiantes'][0] if estudiantes_existentes[
+                'estudiantes'] else None
+            if not estudiante_actual:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="No se encontró el estudiante especificado"
+                )
+        if request.correo and str(request.correo) != estudiante_actual.correo:
+            estudiantes_con_correo = obtener_estudiante_pg(
+                correo=str(request.correo),
+                conexion=conexion
+            )
+
+            if estudiantes_con_correo:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Ya existe otro estudiante registrado con este correo electrónico"
+                )
+
+        matricula_a_asignar = None
+        estado_anterior = estudiante_actual.estado
+        estado_nuevo = request.estado if request.estado else estado_anterior
+
+        if (estado_nuevo == EstadoEstudiante.ACEPTADO and
+                estado_anterior != EstadoEstudiante.ACEPTADO and
+                not estudiante_actual.matricula):
+
+            anio_actual = datetime.now().year
+
+            matricula_a_asignar = f"{anio_actual}-{estudiante_id}"
+
+            logging.info(f"Generando matrícula automática: {matricula_a_asignar} para estudiante {estudiante_id}")
+
+        estudiante_actualizado = actualizar_estudiante_pg(
+            estudiante_id=estudiante_id,
+            usuario_actualizacion_id=usuario_id,
+            nombres=request.nombres,
+            apellidos=request.apellidos,
+            correo=request.correo,
+            matricula=matricula_a_asignar,
+            estado=request.estado,
+            conexion=conexion
+        )
+
+        if not estudiante_actualizado:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No se pudo actualizar el estudiante"
+            )
+
+        if request.estado and request.estado != estado_anterior:
+            try:
+                if request.estado == EstadoEstudiante.ACEPTADO:
+                    email_enviado = email_service.enviar_email_admision_aceptada(
+                        destinatario=str(request.correo) if request.correo else estudiante_actual.correo,
+                        nombres=request.nombres if request.nombres else estudiante_actual.nombres,
+                        apellidos=request.apellidos if request.apellidos else estudiante_actual.apellidos,
+                        matricula=matricula_a_asignar
+                    )
+
+                    if email_enviado:
+                        logging.info(f"Email de admisión aceptada enviado exitosamente a {estudiante_actual.correo}")
+                    else:
+                        logging.warning(f"No se pudo enviar el email de admisión aceptada a {estudiante_actual.correo}")
+
+                elif request.estado == EstadoEstudiante.RECHAZADO:
+                    email_enviado = email_service.enviar_email_admision_rechazada(
+                        destinatario=str(request.correo) if request.correo else estudiante_actual.correo,
+                        nombres=request.nombres if request.nombres else estudiante_actual.nombres,
+                        apellidos=request.apellidos if request.apellidos else estudiante_actual.apellidos
+                    )
+
+                    if email_enviado:
+                        logging.info(f"Email de admisión rechazada enviado exitosamente a {estudiante_actual.correo}")
+                    else:
+                        logging.warning(
+                            f"No se pudo enviar el email de admisión rechazada a {estudiante_actual.correo}")
+
+            except Exception as e:
+                logging.error(f"Error al enviar email de notificación de admisión: {str(e)}")
+
+        conexion.commit()
+
+        return
+
+    except HTTPException as e:
+        logging.exception("Error controlado al actualizar estudiante")
+        conexion.rollback()
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+    except Exception as e:
+        logging.exception("Ocurrió un error inesperado al actualizar estudiante")
         conexion.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
