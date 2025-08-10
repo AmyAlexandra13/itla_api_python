@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
+
 
 class RegistrarEventoRequest(BaseModel):
     nombre: str = Field(
@@ -21,4 +22,3 @@ class RegistrarEventoRequest(BaseModel):
     fechaInicio: datetime
 
     fechaFin: datetime
-

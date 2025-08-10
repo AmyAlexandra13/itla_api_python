@@ -312,7 +312,7 @@ create table if not exists estudiante_materia(
     materia_id bigint not null,
     cuatrimestre_id bigint not null,
     estado varchar(15) not null,
-    calificacion decimal (5, 2) not null,
+    calificacion decimal (5, 2) null,
     fecha_creacion timestamp not null default (now() at time zone 'EDT'),
     fecha_actualizacion timestamp null,
 

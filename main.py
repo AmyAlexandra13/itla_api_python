@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers.internal import auth, categoria_evento, evento, libro, editorial, programa_academico, materia, estudiante, \
-    estudiante_documento, cuatrimestre
+    estudiante_documento, cuatrimestre, estudiante_materia
 import logging
 
 
@@ -30,6 +30,7 @@ app.include_router(materia.router, prefix='/internal')
 app.include_router(estudiante.router, prefix='/internal')
 app.include_router(estudiante_documento.router, prefix='/internal')
 app.include_router(cuatrimestre.router, prefix='/internal')
+app.include_router(estudiante_materia.router, prefix='/internal')
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

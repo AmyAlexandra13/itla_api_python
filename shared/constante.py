@@ -32,3 +32,12 @@ class EstadoDocumento:
 
 class SizeDocumento:
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB por documento
+
+class EstadoEstudianteMateria:
+    RETIRADA = 'RETIRADA'
+    APROBADA = 'APROBADA'
+    REPROBADA = 'REPROBADA'
+
+
+class Calificacion:
+    MINIMO_APROBACION = 70
