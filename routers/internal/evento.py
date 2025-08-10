@@ -7,7 +7,7 @@ from database.categoria_evento import obtener_categoria_evento_pg
 from database.connection import get_connection
 from database.evento import registrar_evento_pg, obtener_evento_pg, actualizar_evento_pg
 from models.evento import Evento
-from models.generico import ResponseData
+from models.generico import ResponseData, ResponseList
 from models.paginacion import ResponsePaginado
 from models.requests.actualizar_evento import ActualizarEventoRequest
 from models.requests.registrar_evento import RegistrarEventoRequest
@@ -29,7 +29,7 @@ def registrar_evento(request: RegistrarEventoRequest = Body(),
 
         usuario_id = current_user['usuarioId']
 
-        fechas_validas_dict = validar_fechas(request.fechaInicio, request.fechaFin)
+        fechas_validas_dict = validar_fechas(fecha_inicio=request.fechaInicio, fecha_fin=request.fechaFin)
 
         if not fechas_validas_dict['valido']:
             logging.exception("Las fechas inicio y fin del evento son invalidas")
@@ -102,17 +102,6 @@ def buscar_evento(
         fechaFin: datetime | None = Query(
             None,
             description="Fecha de fin para filtrar eventos (requiere fechaInicio)"
-        ),
-        numeroPagina: int | None = Query(
-            1,
-            description="Número de página para paginación",
-            ge=1
-        ),
-        limite: int | None = Query(
-            10,
-            description="Límite de registros por página",
-            ge=1,
-            le=20
         )
 ):
     conexion = get_connection()
@@ -144,8 +133,6 @@ def buscar_evento(
             categoria_evento_id=categoriaEventoId,
             fecha_inicio=fechaInicio,
             fecha_fin=fechaFin,
-            numero_pagina=numeroPagina,
-            limite=limite,
             conexion=conexion
         )
 
@@ -157,7 +144,7 @@ def buscar_evento(
 
         conexion.commit()
 
-        return ResponsePaginado[Evento](items=resultado["eventos"], paginacion=resultado["paginacion"])
+        return ResponseList(data=resultado)
 
     except HTTPException as e:
         logging.exception("Error controlado")

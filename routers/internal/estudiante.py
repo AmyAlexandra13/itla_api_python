@@ -5,7 +5,7 @@ from fastapi import APIRouter, status, Body, Depends, HTTPException, Path, Query
 from database.connection import get_connection
 from database.estudiante import registrar_estudiante_pg, obtener_estudiante_pg
 from models.estudiante import Estudiante
-from models.generico import ResponseData
+from models.generico import ResponseData, ResponseList
 from models.paginacion import ResponsePaginado
 from models.requests.registrar_estudiante import RegistrarEstudianteRequest
 from shared.constante import EstadoEstudiante, Rol
@@ -112,17 +112,6 @@ def obtener_estudiantes(
         correo: str | None = Query(
             default=None,
             description='Correo del estudiante'
-        ),
-        numeroPagina: int | None = Query(
-            1,
-            description="Número de página para paginación",
-            ge=1
-        ),
-        limite: int | None = Query(
-            10,
-            description="Límite de registros por página",
-            ge=1,
-            le=20
         )
 ):
     conexion = get_connection()
@@ -130,10 +119,8 @@ def obtener_estudiantes(
     try:
         resultado = obtener_estudiante_pg(
             estado=estado,
-            numero_pagina=numeroPagina,
             correo=correo,
             matricula=matricula,
-            limite=limite,
             conexion=conexion
         )
 
@@ -145,8 +132,7 @@ def obtener_estudiantes(
 
         conexion.commit()
 
-        return ResponsePaginado[Estudiante](items=resultado["estudiantes"], paginacion=resultado["paginacion"])
-
+        return ResponseList(data=resultado)
     except HTTPException as e:
         logging.exception("Error controlado")
         conexion.rollback()
