@@ -141,6 +141,47 @@ def buscar_libros(
         conexion.close()
 
 
+@router.get("/{libroId}",
+            responses={status.HTTP_200_OK: {"model": ResponseData[Libro]}},
+            summary='obtenerLibroPorId', status_code=status.HTTP_200_OK)
+def buscar_libro_id(libro_id: int = Path(alias='libroId', description='Id del libro'),
+                    _: dict = Depends(get_current_user(Rol.ADMINISTRADOR)),
+                    estado: str | None = Query(None, min_length=2, max_length=2, regex="^(AC|IN)$")):
+    conexion = get_connection()
+
+    try:
+        libros = obtener_libros_pg(
+            libro_id=libro_id,
+            estado=estado,
+            conexion=conexion
+        )
+
+        if not libros:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail='No se encontró el libro'
+            )
+
+        libro = libros[0]
+
+        conexion.commit()
+
+        return ResponseData(data=libro)
+
+    except HTTPException as e:
+        logging.exception("Ocurrió un error inesperado")
+        conexion.rollback()
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+    except Exception as e:
+        logging.exception("Ocurrió un error inesperado")
+        conexion.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=e)
+
+    finally:
+        conexion.close()
+
+
 @router.get("/{libroId}/descargar",
             summary="Descargar contenido del libro por ID",
             status_code=status.HTTP_200_OK)
