@@ -304,8 +304,7 @@ def actualizar_estudiante(
         estado_nuevo = request.estado if request.estado else estado_anterior
 
         if (estado_nuevo == EstadoEstudiante.ACEPTADO and
-                estado_anterior != EstadoEstudiante.ACEPTADO and
-                not estudiante_actual.matricula):
+                estado_anterior != EstadoEstudiante.ACEPTADO):
 
             anio_actual = datetime.now().year
 
