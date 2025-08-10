@@ -9,7 +9,6 @@ class CategoriaEventoUnicda(BaseModel):
     nombre: str
 
 class EventoUNICDA(BaseModel):
-    """Modelo para eventos de UNICDA"""
     id: int
     categoriaEventoId: int
     titulo: str
@@ -28,13 +27,11 @@ class PaginacionUNICDA(BaseModel):
 
 
 class EventosUNICDAPaginadoResponse(BaseModel):
-    """Modelo para respuesta paginada de eventos de UNICDA"""
     pagination: PaginacionUNICDA
     data: List[EventoUNICDA]
 
 
 class EventosUNICDARequest(BaseModel):
-    """Modelo para petición de eventos de UNICDA"""
     page: Optional[int] = 1
     pageSize: Optional[int] = 10
     categoriaEventoId: Optional[int] = None
