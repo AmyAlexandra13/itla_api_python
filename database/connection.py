@@ -7,7 +7,7 @@ def get_connection():
             host="localhost",
             database="itla_api_db",
             user="postgres",
-            password="admin",
+            password="123",
             port=5432
         )
     except Exception as e:
