@@ -13,6 +13,8 @@ def registrar_estudiante_pg(
         apellidos: str,
         correo: EmailStr,
         estado: str,
+        cedula: str,
+        telefono: str,
         usuario_creacion_id: int,
         matricula: str | None = None,
         conexion: psycopg2.extensions.connection | None = None
@@ -22,6 +24,8 @@ def registrar_estudiante_pg(
         'apellidos',
         'correo',
         'estado',
+        'cedula',
+        'telefono',
         'usuario_creacion_id'
     ]
 
@@ -30,6 +34,8 @@ def registrar_estudiante_pg(
         apellidos,
         correo,
         estado,
+        cedula,
+        telefono,
         usuario_creacion_id
     ]
 
@@ -56,6 +62,8 @@ def query_seleccionar_datos_estudiante():
                   e.correo,
                   e.matricula,
                   e.estado,
+                  e.cedula,
+                  e.telefono,
                   e.fecha_creacion,
                   e.fecha_actualizacion,
                   json_build_object(

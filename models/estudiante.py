@@ -14,6 +14,8 @@ class Estudiante(BaseModel):
     correo: str
     matricula: str | None = None
     estado: str
+    cedula: str
+    telefono: str
     usuarioCreacion: UsuarioEstudiante
     fechaCreacion: datetime
     usuarioActualizacion: UsuarioEstudiante | None = None
