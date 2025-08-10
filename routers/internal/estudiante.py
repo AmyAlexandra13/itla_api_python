@@ -42,7 +42,6 @@ def registrar_estudiante(
 
         usuario_id = current_user['usuarioId']
 
-        # Registrar el estudiante
         estudiante_id = registrar_estudiante_pg(
             nombres=request.nombres,
             apellidos=request.apellidos,
