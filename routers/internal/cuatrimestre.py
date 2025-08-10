@@ -196,7 +196,6 @@ def actualizar_cuatrimestre(
                 detail='No se encontró el cuatrimestre para actualizar'
             )
 
-        # Validar que al menos un campo se va a actualizar
         if (request.periodo is None and request.anio is None and request.estado is None):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
