@@ -47,6 +47,8 @@ def registrar_estudiante(
             nombres=request.nombres,
             apellidos=request.apellidos,
             correo=request.correo,
+            cedula=request.cedula,
+            telefono=request.telefono,
             estado=EstadoEstudiante.REGISTRADO,
             usuario_creacion_id=usuario_id,
             conexion=conexion
