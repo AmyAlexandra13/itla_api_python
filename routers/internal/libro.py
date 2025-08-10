@@ -115,7 +115,7 @@ def buscar_libros(
 
         conexion.rollback()
 
-        raise HTTPException(status_code=e.status_code, detail=e)
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
 
     except Exception as e:
         logging.exception("Ocurrió un error inesperado al obtener libros")
