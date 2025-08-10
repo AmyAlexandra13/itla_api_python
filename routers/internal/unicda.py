@@ -55,9 +55,6 @@ def obtener_eventos_unicda(
         fechaInicio: Optional[datetime] = Query(None, description="Fecha de inicio para filtrar eventos"),
         fechaFin: Optional[datetime] = Query(None, description="Fecha de fin para filtrar eventos")
 ):
-    """
-    Obtiene la lista de eventos paginada desde la API de UNICDA
-    """
     try:
         params = {
             "page": UnicdaPaginacion.PAGE,
@@ -71,7 +68,6 @@ def obtener_eventos_unicda(
         if fechaFin is not None:
             params["ToDate"] = fechaFin.isoformat()
 
-        # Validar que si se proporciona fechaInicio, también se proporcione fechaFin
         if fechaInicio is not None and fechaFin is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -84,7 +80,6 @@ def obtener_eventos_unicda(
                 detail="Si proporciona fechaFin, también debe proporcionar fechaInicio"
             )
 
-        # Validar que fechaInicio sea menor que fechaFin
         if fechaInicio is not None and fechaFin is not None:
             if fechaInicio >= fechaFin:
                 raise HTTPException(
@@ -92,7 +87,6 @@ def obtener_eventos_unicda(
                     detail="La fechaInicio debe ser menor que la fechaFin"
                 )
 
-        # Realizar petición a UNICDA
         response = unicda_service.get(UNICDAEndpoints.EVENTOS_PAGINATION, params=params)
 
         if response is None:
@@ -101,7 +95,6 @@ def obtener_eventos_unicda(
                 detail="Error al obtener eventos de UNICDA"
             )
 
-        # Validar que la respuesta tenga la estructura esperada
         if "pagination" not in response or "data" not in response:
             logging.error(f"Respuesta inesperada de UNICDA: {response}")
             raise HTTPException(
@@ -109,8 +102,6 @@ def obtener_eventos_unicda(
                 detail="Formato de respuesta inesperado de UNICDA"
             )
 
-
-        # Convertir la respuesta al modelo esperado
         try:
             eventos_response = EventosUNICDAPaginadoResponse(**response)
 
