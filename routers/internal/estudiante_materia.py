@@ -349,7 +349,7 @@ def actualizar_estudiante_materia(
         conexion.close()
 
 
-@router.get("/estudiante/{estudianteId}/historial",
+@router.get("/estudiante/{matricula}/historial",
             responses={
                 status.HTTP_200_OK: {
                     "model": ResponseList[List[EstudianteMateria]]
@@ -357,7 +357,7 @@ def actualizar_estudiante_materia(
             },
             summary='obtenerHistorialAcademicoEstudiante', status_code=status.HTTP_200_OK)
 def obtener_historial_academico_estudiante(
-        estudiante_id: int = Path(alias='estudianteId', description='ID del estudiante'),
+        matricula: str = Path(alias='matricula', description='matricula del estudiante'),
         _: dict = Depends(get_current_user(Rol.ADMINISTRADOR)),
         estado: str | None = Query(
             None,
@@ -365,23 +365,24 @@ def obtener_historial_academico_estudiante(
             regex="^(RETIRADA|APROBADA|REPROBADA)$"
         )
 ):
-    """
-    Endpoint adicional para obtener el historial académico completo de un estudiante
-    """
     conexion = get_connection()
 
     try:
-        # Verificar que el estudiante existe
         estudiantes = obtener_estudiante_pg(
-            estudiante_id=estudiante_id,
+            matricula=matricula,
+            estado=EstadoEstudiante.ACEPTADO,
             conexion=conexion
         )
 
         if not estudiantes:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="No se encontró el estudiante especificado"
+                detail="No se encontró el estudiante especificado o no esta aceptado en la institucion"
             )
+
+        estudiante = estudiantes[0]
+
+        estudiante_id = estudiante.estudianteId
 
         # Obtener todas las materias del estudiante
         estudiante_materias = obtener_estudiante_materia_pg(
