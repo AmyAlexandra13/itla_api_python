@@ -49,6 +49,8 @@ class UNICDAEndpoints:
     EVENTOS_PAGINATION = "/api/Evento/GetPagination"
     ESTUDIANTES = "/api/Estudiantes"
     LIBROS_PAGINATION = "/api/Libro/GetPagination"
+    PDF_MULTIMEDIA = "/api/MultimediaPreview/PDF"
+
 
 
 class UnicdaPaginacion:

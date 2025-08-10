@@ -14,9 +14,6 @@ class UNICDAService:
         self.token_expiry = None
 
     def _generate_external_token(self) -> Optional[str]:
-        """
-        Genera un token de acceso externo para autenticarse con la API de UNICDA
-        """
         try:
             url = f"{self.base_url}/api/Auth/GenerateExternalAPIToken"
 
@@ -30,7 +27,6 @@ class UNICDAService:
                 "Accept": "application/json"
             }
 
-            # Deshabilitar verificación SSL para localhost (solo para desarrollo)
             response = requests.post(
                 url,
                 json=payload,
@@ -42,7 +38,6 @@ class UNICDAService:
             if response.status_code == 200:
                 response_data = response.json()
 
-                # Asumir que la respuesta contiene el token y posiblemente la expiración
                 if isinstance(response_data, dict):
                     token = response_data.get('token') or response_data.get('accessToken')
                     expires_in = response_data.get('expiresIn', 3600)  # Default 1 hora
@@ -143,22 +138,59 @@ class UNICDAService:
             logging.error(f"Error inesperado en petición a UNICDA: {str(e)}")
             return None
 
-    # Métodos de conveniencia para operaciones comunes
+    def make_authenticated_request_pdf(
+            self,
+            method: str,
+            endpoint: str,
+            params: Optional[Dict[str, Any]] = None
+    ) -> Optional[bytes]:
+
+        try:
+            token = self.get_valid_token()
+            if not token:
+                logging.error("No se pudo obtener token válido de UNICDA")
+                return None
+
+            url = f"{self.base_url}{endpoint}"
+
+            headers = {
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/pdf"
+            }
+
+            response = requests.request(
+                method=method.upper(),
+                url=url,
+                headers=headers,
+                params=params if params else None,
+                verify=False,
+                timeout=60
+            )
+
+            if response.status_code == 200:
+                return response.content
+            else:
+                logging.error(f"Error al obtener PDF de UNICDA: {response.status_code} - {response.text}")
+                return None
+
+        except Exception as e:
+            logging.error(f"Error inesperado al obtener PDF de UNICDA: {str(e)}")
+            return None
+
     def get(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
-        """Realiza una petición GET autenticada"""
         return self.make_authenticated_request("GET", endpoint, params=params)
 
     def post(self, endpoint: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Realiza una petición POST autenticada"""
         return self.make_authenticated_request("POST", endpoint, data=data)
 
     def put(self, endpoint: str, data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-        """Realiza una petición PUT autenticada"""
         return self.make_authenticated_request("PUT", endpoint, data=data)
 
     def delete(self, endpoint: str) -> Optional[Dict[str, Any]]:
-        """Realiza una petición DELETE autenticada"""
         return self.make_authenticated_request("DELETE", endpoint)
+
+    def get_pdf(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Optional[bytes]:
+        return self.make_authenticated_request_pdf("GET", endpoint, params=params)
 
 
 unicda_service = UNICDAService()
