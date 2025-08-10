@@ -6,6 +6,7 @@ from fastapi import APIRouter, status, Depends, HTTPException, UploadFile, File,
 from starlette.responses import StreamingResponse
 
 from database.connection import get_connection
+from database.editorial import obtener_editorial_pg
 from database.libro import registrar_libro_pg, obtener_libros_pg, obtener_content_libro, actualizar_libro_pg
 from models.generico import ResponseData, ResponseList
 from models.libro import Libro
@@ -40,6 +41,18 @@ async def registrar_libro(
         if len(content) > SizeLibro.MAX_FILE_SIZE:
             raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
                                 detail="Archivo excede los 20MB permitidos")
+
+        editorial = obtener_editorial_pg(
+            editorial_id=editorialId,
+            estado=Estado.ACTIVO,
+            conexion=conexion
+        )
+
+        if not editorial:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No se encontró la editorial especificada o no esta activa"
+            )
 
         libro_id = registrar_libro_pg(
             editorial_id=editorialId,
