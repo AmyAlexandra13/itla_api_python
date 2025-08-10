@@ -238,7 +238,7 @@ create table if not exists estudiante(
 
     constraint estudiante_correo_uk
         unique(correo)
-)
+);
 
 create table if not exists estudiante_documento(
     estudiante_documento_id bigserial primary key not null,
