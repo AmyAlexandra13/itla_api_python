@@ -12,3 +12,11 @@ class Paginacion(BaseModel):
 class ResponsePaginado(BaseModel, Generic[T]):
     items: List[T]
     paginacion: Paginacion
+
+
+class PaginacionUNICDA(BaseModel):
+    pages: int
+    records: int
+    currentPage: int
+    prevPage: int
+    nextPage: int

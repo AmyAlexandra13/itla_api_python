@@ -48,6 +48,8 @@ class UNICDAEndpoints:
     GENERATE_TOKEN = "/api/Auth/GenerateExternalAPIToken"
     EVENTOS_PAGINATION = "/api/Evento/GetPagination"
     ESTUDIANTES = "/api/Estudiantes"
+    LIBROS_PAGINATION = "/api/Libro/GetPagination"
+
 
 class UnicdaPaginacion:
     PAGE = 1

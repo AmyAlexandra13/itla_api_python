@@ -6,6 +6,7 @@ from fastapi import APIRouter, status, Depends, HTTPException, Query
 
 from models.generico import ResponseData, ResponseList
 from models.unicda.evento_unicda import EventosUNICDAPaginadoResponse, EventoUNICDA
+from models.unicda.libro_unicda import LibrosUNICDAPaginadoResponse, LibroUNICDA
 from models.unicda_token_response import UNICDATokenResponse
 from shared.constante import Rol, UNICDAEndpoints, UnicdaPaginacion
 from shared.permission import get_current_user
@@ -60,7 +61,6 @@ def obtener_eventos_unicda(
             "page": UnicdaPaginacion.PAGE,
             "pageSize": UnicdaPaginacion.PAGESIZE
         }
-
 
         if fechaInicio is not None:
             params["FromDate"] = fechaInicio.isoformat()
@@ -122,6 +122,74 @@ def obtener_eventos_unicda(
         raise HTTPException(status_code=e.status_code, detail=e.detail)
     except Exception as e:
         logging.exception("Error inesperado al obtener eventos de UNICDA")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno: {str(e)}"
+        )
+
+
+@router.get("/libros",
+            responses={status.HTTP_200_OK: {"model": ResponseList[LibroUNICDA]}},
+            summary='obtenerLibrosUNICDA', status_code=status.HTTP_200_OK)
+def obtener_libros_unicda(
+        _: dict = Depends(get_current_user(Rol.ADMINISTRADOR)),
+        titulo: Optional[str] = Query(None, description="Título del libro para filtrar"),
+        editorialId: Optional[int] = Query(None, ge=1, description="ID de la editorial para filtrar")
+):
+    """
+    Obtiene la lista de libros desde la API de UNICDA
+    """
+    try:
+        # Construir parámetros para la petición
+        params = {
+            "Page": UnicdaPaginacion.PAGE,
+            "PageSize": UnicdaPaginacion.PAGESIZE
+        }
+
+        # Agregar parámetros opcionales si se proporcionan
+        if titulo is not None:
+            params["titulo"] = titulo
+
+        if editorialId is not None:
+            params["editorialId"] = editorialId
+
+        # Realizar petición a UNICDA
+        response = unicda_service.get(UNICDAEndpoints.LIBROS_PAGINATION, params=params)
+
+        if response is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Error al obtener libros de UNICDA"
+            )
+
+        # Validar que la respuesta tenga la estructura esperada
+        if "pagination" not in response or "data" not in response:
+            logging.error(f"Respuesta inesperada de UNICDA libros: {response}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Formato de respuesta inesperado de UNICDA"
+            )
+
+        try:
+            libros_response = LibrosUNICDAPaginadoResponse(**response)
+
+            data_libros = libros_response.data
+
+            return ResponseList(data=data_libros)
+
+        except Exception as parse_error:
+            logging.error(f"Error al parsear respuesta de libros UNICDA: {str(parse_error)}")
+            logging.error(f"Respuesta original: {response}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error al procesar la respuesta de UNICDA"
+            )
+
+    except HTTPException as e:
+        logging.exception("Error controlado")
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logging.exception("Error inesperado al obtener libros de UNICDA")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error interno: {str(e)}"

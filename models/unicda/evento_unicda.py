@@ -4,6 +4,9 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
+from models.paginacion import PaginacionUNICDA
+
+
 class CategoriaEventoUnicda(BaseModel):
     id: int
     nombre: str
@@ -15,15 +18,6 @@ class EventoUNICDA(BaseModel):
     descripcion: str
     fecha: datetime
     categoriaEvento: CategoriaEventoUnicda
-
-
-class PaginacionUNICDA(BaseModel):
-    """Modelo para paginación de UNICDA"""
-    pages: int
-    records: int
-    currentPage: int
-    prevPage: int
-    nextPage: int
 
 
 class EventosUNICDAPaginadoResponse(BaseModel):
