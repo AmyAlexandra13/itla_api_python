@@ -1,8 +1,12 @@
 # Crear archivo models/unicda/evento.py
 from datetime import datetime
-from pydantic import BaseModel
 from typing import List, Optional
 
+from pydantic import BaseModel
+
+class CategoriaEventoUnicda(BaseModel):
+    id: int
+    nombre: str
 
 class EventoUNICDA(BaseModel):
     """Modelo para eventos de UNICDA"""
@@ -11,6 +15,7 @@ class EventoUNICDA(BaseModel):
     titulo: str
     descripcion: str
     fecha: datetime
+    categoriaEvento: CategoriaEventoUnicda
 
 
 class PaginacionUNICDA(BaseModel):

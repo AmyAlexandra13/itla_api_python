@@ -5,7 +5,7 @@ from typing import Optional
 from fastapi import APIRouter, status, Depends, HTTPException, Query
 
 from models.generico import ResponseData, ResponseList
-from models.unicda.evento_unicda import EventosUNICDAPaginadoResponse
+from models.unicda.evento_unicda import EventosUNICDAPaginadoResponse, EventoUNICDA
 from models.unicda_token_response import UNICDATokenResponse
 from shared.constante import Rol, UNICDAEndpoints, UnicdaPaginacion
 from shared.permission import get_current_user
@@ -48,7 +48,7 @@ def generar_token_unicda(
 
 
 @router.get("/eventos",
-            responses={status.HTTP_200_OK: {"model": ResponseData[EventosUNICDAPaginadoResponse]}},
+            responses={status.HTTP_200_OK: {"model": ResponseList[EventoUNICDA]}},
             summary='obtenerEventosUNICDA', status_code=status.HTTP_200_OK)
 def obtener_eventos_unicda(
         _: dict = Depends(get_current_user(Rol.ADMINISTRADOR)),
