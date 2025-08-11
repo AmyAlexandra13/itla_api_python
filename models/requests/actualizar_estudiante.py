@@ -33,6 +33,18 @@ class ActualizarEstudianteRequest(BaseModel):
         pattern="^(REGISTRADO|PENDIENTE_DOCUMENTO|PENDIENTE_RESPUESTA|ACEPTADO|RECHAZADO|GRADUADO)$"
     )
 
+    cedula: str | None = Field(
+        default=None,
+        min_length=6,
+        max_length=15
+    )
+
+    telefono: str | None = Field(
+        default=None,
+        min_length=6,
+        max_length=15
+    )
+
     class Config:
         json_schema_extra = {
             "example": {
@@ -40,6 +52,8 @@ class ActualizarEstudianteRequest(BaseModel):
                 "nombres": "Juan Carlos",
                 "apellidos": "Pérez González",
                 "correo": "juan.perez@correo.com",
-                "estado": "ACEPTADO"
+                "estado": "ACEPTADO",
+                "telefono": "32323232",
+                "cedula": "32323232"
             }
         }

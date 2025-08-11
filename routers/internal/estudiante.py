@@ -317,6 +317,8 @@ def actualizar_estudiante(
             apellidos=request.apellidos,
             correo=request.correo,
             matricula=matricula_a_asignar,
+            cedula=request.cedula,
+            telefono=request.telefono,
             estado=request.estado,
             conexion=conexion
         )
