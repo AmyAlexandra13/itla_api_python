@@ -20,7 +20,7 @@ router = APIRouter(prefix="/unicda", tags=["UNICDA"])
 
 @router.post("/generar-token",
              responses={status.HTTP_200_OK: {"model": ResponseData[UNICDATokenResponse]}},
-             summary='generarTokenUNICDA', status_code=status.HTTP_200_OK)
+             summary='generarTokenUNICDA', status_code=status.HTTP_200_OK, include_in_schema=False)
 def generar_token_unicda(
         _: dict = Depends(get_current_user(Rol.ADMINISTRADOR))
 ):
