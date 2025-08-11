@@ -7,7 +7,6 @@ from database.connection import get_connection
 from database.estudiante import registrar_estudiante_pg, obtener_estudiante_pg, actualizar_estudiante_pg
 from models.estudiante import Estudiante
 from models.generico import ResponseData, ResponseList
-from models.paginacion import ResponsePaginado
 from models.requests.actualizar_estudiante import ActualizarEstudianteRequest
 from models.requests.registrar_estudiante import RegistrarEstudianteRequest
 from shared.constante import EstadoEstudiante, Rol
@@ -97,7 +96,7 @@ def registrar_estudiante(
 @router.get("/",
             responses={
                 status.HTTP_200_OK: {
-                    "model": ResponsePaginado[Estudiante]
+                    "model": ResponseList[Estudiante]
                 }
             },
             summary='obtenerEstudiantes', status_code=status.HTTP_200_OK)
@@ -305,7 +304,6 @@ def actualizar_estudiante(
 
         if (estado_nuevo == EstadoEstudiante.ACEPTADO and
                 estado_anterior != EstadoEstudiante.ACEPTADO):
-
             anio_actual = datetime.now().year
 
             matricula_a_asignar = f"{anio_actual}-{estudiante_id}"
