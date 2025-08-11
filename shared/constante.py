@@ -50,9 +50,12 @@ class UNICDAEndpoints:
     ESTUDIANTES = "/api/Estudiantes"
     LIBROS_PAGINATION = "/api/Libro/GetPagination"
     PDF_MULTIMEDIA = "/api/MultimediaPreview/PDF"
-
+    ESTUDIANTES_PAGINATION = "/api/Estudiante/GetPagination"
 
 
 class UnicdaPaginacion:
     PAGE = 1
     PAGESIZE = 10
+
+class InstitucionExternaUnicda:
+    ITLA = 1

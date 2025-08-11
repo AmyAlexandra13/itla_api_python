@@ -7,10 +7,11 @@ from fastapi import APIRouter, status, Depends, HTTPException, Query, Path
 from starlette.responses import StreamingResponse
 
 from models.generico import ResponseData, ResponseList
+from models.unicda.estudiante_unicda import EstudiantesUNICDAPaginadoResponse, EstudianteUNICDA
 from models.unicda.evento_unicda import EventosUNICDAPaginadoResponse, EventoUNICDA
 from models.unicda.libro_unicda import LibrosUNICDAPaginadoResponse, LibroUNICDA
 from models.unicda_token_response import UNICDATokenResponse
-from shared.constante import Rol, UNICDAEndpoints, UnicdaPaginacion
+from shared.constante import Rol, UNICDAEndpoints, UnicdaPaginacion, InstitucionExternaUnicda
 from shared.permission import get_current_user
 from shared.unicda_service import unicda_service
 
@@ -244,6 +245,62 @@ def descargar_pdf_unicda(
 
     except Exception as e:
         logging.exception("Error inesperado al descargar PDF de UNICDA")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error interno: {str(e)}"
+        )
+
+
+@router.get("/estudiantes",
+            responses={status.HTTP_200_OK: {"model": ResponseList[EstudianteUNICDA]}},
+            summary='obtenerEstudiantesUNICDA', status_code=status.HTTP_200_OK)
+def obtener_estudiantes_unicda(
+        _: dict = Depends(get_current_user(Rol.ADMINISTRADOR)),
+):
+
+    try:
+        params = {
+            "Page": UnicdaPaginacion.PAGE,
+            "PageSize": UnicdaPaginacion.PAGESIZE,
+            "InstitucionExternaId": InstitucionExternaUnicda.ITLA
+        }
+
+        response = unicda_service.get(UNICDAEndpoints.ESTUDIANTES_PAGINATION, params=params)
+
+        if response is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Error al obtener estudiantes de UNICDA"
+            )
+
+        # Validar que la respuesta tenga la estructura esperada
+        if "pagination" not in response or "data" not in response:
+            logging.error(f"Respuesta inesperada de UNICDA estudiantes: {response}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Formato de respuesta inesperado de UNICDA"
+            )
+
+        try:
+            estudiantes_response = EstudiantesUNICDAPaginadoResponse(**response)
+
+            data_estudiantes = estudiantes_response.data
+
+            return ResponseList(data=data_estudiantes)
+
+        except Exception as parse_error:
+            logging.error(f"Error al parsear respuesta de estudiantes UNICDA: {str(parse_error)}")
+            logging.error(f"Respuesta original: {response}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error al procesar la respuesta de UNICDA"
+            )
+
+    except HTTPException as e:
+        logging.exception("Error controlado")
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    except Exception as e:
+        logging.exception("Error inesperado al obtener estudiantes de UNICDA")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error interno: {str(e)}"
