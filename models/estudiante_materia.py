@@ -27,7 +27,7 @@ class EstudianteMateria(BaseModel):
     materiaId: int
     cuatrimestreId: int
     estado: str
-    calificacion: Decimal
+    calificacion: Decimal | None = None
     fechaCreacion: datetime
     fechaActualizacion: datetime | None = None
     estudiante: EstudianteOut
