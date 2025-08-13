@@ -202,6 +202,8 @@ def actualizar_estudiante_pg(
         apellidos: str | None = None,
         correo: EmailStr | None = None,
         matricula: str | None = None,
+        cedula: str | None = None,
+        telefono: str | None = None,
         estado: str | None = None,
         conexion: psycopg2.extensions.connection | None = None
 ):
@@ -230,6 +232,14 @@ def actualizar_estudiante_pg(
     if estado is not None:
         fields.append("estado = %s")
         values.append(estado)
+
+    if cedula is not None:
+        fields.append("cedula = %s")
+        values.append(cedula)
+
+    if telefono is not None:
+        fields.append("telefono = %s")
+        values.append(telefono)
 
     if not fields:
         return None

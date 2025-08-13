@@ -217,6 +217,7 @@ create table if not exists estudiante(
     apellidos varchar (250) not null,
     cedula varchar(15) not null,
     correo varchar(50) not null,
+    cedula varchar(15) not null,
     telefono varchar(15) not null,
     matricula varchar (20) null,
     estado varchar(30) not null,
@@ -288,4 +289,57 @@ create table if not exists estudiante_programa_academico(
         on delete restrict
 );
 
+create table if not exists cuatrimestre(
+    cuatrimestre_id bigserial primary key not null,
+    periodo varchar(2) not null,
+    anio bigint not null,
+    estado varchar(2) not null,
+    fecha_creacion timestamp not null default (now() at time zone 'EDT'),
+    fecha_actualizacion timestamp null,
 
+    constraint cuatrimestre_estado_ck
+        check(estado in ('AC', 'IN')),
+
+    constraint cuatrimestre_periodo_ck
+        check(periodo in ('C1', 'C2', 'C3')),
+
+    constraint cuatrimestre_periodo_anio_uk
+        unique (periodo, anio)
+);
+
+create table if not exists estudiante_materia(
+    estudiante_materia_id bigserial primary key not null,
+    estudiante_id bigint not null,
+    materia_id bigint not null,
+    cuatrimestre_id bigint not null,
+    estado varchar(15) not null,
+    calificacion decimal (5, 2) null,
+    fecha_creacion timestamp not null default (now() at time zone 'EDT'),
+    fecha_actualizacion timestamp null,
+
+    constraint estudiante_materia_estado_ck
+        check(estado in ('RETIRADA', 'APROBADA', 'REPROBADA')),
+
+    constraint estudiante_materia_estudiante_id_fk
+        foreign key (estudiante_id)
+        references estudiante(estudiante_id)
+        on delete restrict,
+
+    constraint estudiante_materia_materia_id_fk
+        foreign key (materia_id)
+        references materia(materia_id)
+        on delete restrict,
+
+    constraint estudiante_materia_cuatrimestre_id_fk
+        foreign key (cuatrimestre_id)
+        references cuatrimestre(cuatrimestre_id)
+        on delete restrict,
+
+    constraint estudiante_materia_estudiante_id_materia_id_cuatrimestre_id_uk
+        unique (estudiante_id, materia_id, cuatrimestre_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cuatrimestre_anio_periodo ON cuatrimestre(anio DESC, periodo);
+CREATE INDEX IF NOT EXISTS idx_estudiante_materia_estudiante_id ON estudiante_materia(estudiante_id);
+CREATE INDEX IF NOT EXISTS idx_estudiante_materia_cuatrimestre_id ON estudiante_materia(cuatrimestre_id);
+CREATE INDEX IF NOT EXISTS idx_estudiante_materia_materia_id ON estudiante_materia(materia_id);

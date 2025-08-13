@@ -32,3 +32,30 @@ class EstadoDocumento:
 
 class SizeDocumento:
     MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB por documento
+
+class EstadoEstudianteMateria:
+    RETIRADA = 'RETIRADA'
+    APROBADA = 'APROBADA'
+    REPROBADA = 'REPROBADA'
+
+
+class Calificacion:
+    MINIMO_APROBACION = 70
+
+
+class UNICDAEndpoints:
+    BASE_URL = "https://localhost:7192"
+    GENERATE_TOKEN = "/api/Auth/GenerateExternalAPIToken"
+    EVENTOS_PAGINATION = "/api/Evento/GetPagination"
+    ESTUDIANTES = "/api/Estudiantes"
+    LIBROS_PAGINATION = "/api/Libro/GetPagination"
+    PDF_MULTIMEDIA = "/api/MultimediaPreview/PDF"
+    ESTUDIANTES_PAGINATION = "/api/Estudiante/GetPagination"
+
+
+class UnicdaPaginacion:
+    PAGE = 1
+    PAGESIZE = 10
+
+class InstitucionExternaUnicda:
+    ITLA = 1

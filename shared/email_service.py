@@ -274,6 +274,168 @@ class EmailService:
             logging.error(f"Error al enviar email de documentos validados a {destinatario}: {str(e)}")
             return False
 
+    def enviar_email_admision_aceptada(
+            self,
+            destinatario: str,
+            nombres: str,
+            apellidos: str,
+            matricula: str
+    ) -> bool:
+
+        try:
+            asunto = "¡Felicitaciones! Tu admisión ha sido aceptada"
+
+            mensaje = MIMEMultipart()
+            mensaje['From'] = self.email_user
+            mensaje['To'] = destinatario
+            mensaje['Subject'] = asunto
+
+
+            cuerpo_html = f"""
+            <html>
+                <head>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; }}
+                        .container {{ max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 30px; border-radius: 10px; }}
+                        .header {{ background-color: #4CAF50; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }}
+                        .content {{ background-color: white; padding: 30px; margin: 0; }}
+                        .matricula {{ background-color: #e8f5e8; border: 2px solid #4CAF50; padding: 15px; margin: 20px 0; text-align: center; border-radius: 5px; }}
+                        .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+                        .success {{ color: #4CAF50; font-weight: bold; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>¡Admisión Aceptada!</h1>
+                        </div>
+                        <div class="content">
+                            <p>Estimado/a <strong>{nombres} {apellidos}</strong>,</p>
+
+                            <p class="success">¡Felicitaciones! Nos complace informarte que tu solicitud de admisión ha sido <strong>ACEPTADA</strong>.</p>
+
+                            <p>Te damos la más cordial bienvenida a nuestra institución educativa. Estamos emocionados de tenerte como parte de nuestra comunidad académica.</p>
+
+                            <div class="matricula">
+                                <h3>Tu número de matrícula es:</h3>
+                                <h2 style="color: #4CAF50; margin: 10px 0;">{matricula}</h2>
+                                <p><em>Guarda este número, lo necesitarás para todos tus trámites académicos.</em></p>
+                            </div>
+
+                            <p><strong>Próximos pasos:</strong></p>
+                            <ul>
+                                <li>Conserva tu número de matrícula en un lugar seguro</li>
+                                <li>Mantente atento a futuras comunicaciones sobre el proceso de inscripción</li>
+                                <li>Si tienes dudas, no dudes en contactarnos</li>
+                            </ul>
+
+                            <p>Una vez más, ¡felicitaciones y bienvenido/a!</p>
+
+                            <p>Atentamente,<br>
+                            <strong>Equipo de Admisiones</strong></p>
+                        </div>
+                        <div class="footer">
+                            <p>Este es un mensaje automático, por favor no responder a este correo.</p>
+                        </div>
+                    </div>
+                </body>
+            </html>
+            """
+
+            mensaje.attach(MIMEText(cuerpo_html, 'html'))
+
+            # Enviar email
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls()
+                server.login(self.email_user, self.email_password)
+                server.send_message(mensaje)
+
+            return True
+
+        except Exception as e:
+            logging.error(f"Error al enviar email de admisión aceptada: {str(e)}")
+            return False
+
+    def enviar_email_admision_rechazada(
+            self,
+            destinatario: str,
+            nombres: str,
+            apellidos: str
+    ) -> bool:
+        """
+        Envía email de notificación cuando la admisión del estudiante es rechazada
+        """
+        try:
+            asunto = "Resultado de tu solicitud de admisión"
+
+            mensaje = MIMEMultipart()
+            mensaje['From'] = self.email_user
+            mensaje['To'] = destinatario
+            mensaje['Subject'] = asunto
+
+            # Crear el contenido HTML del email
+            contenido_html = f"""
+            <html>
+                <head>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; }}
+                        .container {{ max-width: 600px; margin: 0 auto; background-color: #f9f9f9; padding: 30px; border-radius: 10px; }}
+                        .header {{ background-color: #f44336; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }}
+                        .content {{ background-color: white; padding: 30px; margin: 0; }}
+                        .info-box {{ background-color: #fff3cd; border: 2px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 5px; }}
+                        .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>Resultado de Admisión</h1>
+                        </div>
+                        <div class="content">
+                            <p>Estimado/a <strong>{nombres} {apellidos}</strong>,</p>
+
+                            <p>Agradecemos tu interés en formar parte de nuestra institución educativa y el tiempo que dedicaste al proceso de admisión.</p>
+
+                            <p>Lamentamos informarte que, después de una cuidadosa evaluación de tu solicitud y documentación, <strong>no podemos ofrecerte un lugar en esta ocasión</strong>.</p>
+
+                            <div class="info-box">
+                                <p><strong>Esta decisión no refleja tu valía personal o académica.</strong> El proceso de admisión es altamente competitivo y debemos tomar decisiones difíciles debido a la limitada disponibilidad de cupos.</p>
+                            </div>
+
+                            <p><strong>Te animamos a:</strong></p>
+                            <ul>
+                                <li>Considerar aplicar nuevamente en el próximo período de admisiones</li>
+                                <li>Explorar otras oportunidades educativas que se alineen con tus objetivos</li>
+                                <li>Continuar preparándote académicamente para futuras oportunidades</li>
+                            </ul>
+
+                            <p>Te deseamos mucho éxito en tus futuros emprendimientos académicos y profesionales.</p>
+
+                            <p>Atentamente,<br>
+                            <strong>Equipo de Admisiones</strong></p>
+                        </div>
+                        <div class="footer">
+                            <p>Este es un mensaje automático, por favor no responder a este correo.</p>
+                        </div>
+                    </div>
+                </body>
+            </html>
+            """
+
+            mensaje.attach(MIMEText(contenido_html, 'html'))
+
+            with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
+                server.starttls()
+                server.login(self.email_user, self.email_password)
+                server.send_message(mensaje)
+
+            return True
+
+        except Exception as e:
+            logging.error(f"Error al enviar email de admisión rechazada: {str(e)}")
+            return False
+
+
 email_service = EmailService(
     smtp_server="smtp.gmail.com",
     smtp_port=587,
